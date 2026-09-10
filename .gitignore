@@ -1,0 +1,105 @@
+# ================================
+# Environment / Secrets
+# ================================
+.env
+.env.*
+!.env.example
+
+# Secrets / credentials
+*.pem
+*.key
+*.crt
+credentials.json
+secrets.json
+owner_accounts.json
+
+# ================================
+# Python
+# ================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging / build
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ================================
+# Testing / Coverage
+# ================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+
+# ================================
+# Type checkers / linters
+# ================================
+.mypy_cache/
+.pyre/
+.ruff_cache/
+
+# ================================
+# Logs
+# ================================
+*.log
+logs/
+
+# ================================
+# Local databases
+# ================================
+*.db
+*.sqlite
+*.sqlite3
+
+# ================================
+# IDE / Editor
+# ================================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+.idea/
+*.swp
+*.swo
+*~
+
+# ================================
+# Operating System
+# ================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ================================
+# Node / Frontend (if created locally)
+# ================================
+node_modules/
+.next/
+out/
+dist/
+
+# ================================
+# Temporary files
+# ================================
+tmp/
+temp/
+*.tmp
+*.bak
+
+# ================================
+# Docker local overrides
+# ================================
+docker-compose.override.yml

@@ -1,0 +1,72 @@
+﻿services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: restaurant
+      POSTGRES_USER: restaurant
+      POSTGRES_PASSWORD: restaurant
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U restaurant -d restaurant"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: ./backend
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://restaurant:restaurant@postgres:5432/restaurant
+      REDIS_URL: redis://redis:6379/0
+      OWNER_ACCOUNTS_FILE: /data/owner_accounts.json
+      PYTHONPATH: /app
+    ports:
+      - "8000:8000"
+    volumes:
+      - owner_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ./backend
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://restaurant:restaurant@postgres:5432/restaurant
+      REDIS_URL: redis://redis:6379/0
+      OWNER_ACCOUNTS_FILE: /data/owner_accounts.json
+      PYTHONPATH: /app
+    command: ["python", "-m", "app.workers.message_processor"]
+    volumes:
+      - owner_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+  owner_data:
