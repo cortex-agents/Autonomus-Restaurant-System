@@ -14,6 +14,12 @@ class Restaurant(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uid)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     whatsapp_number: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    # 🆕 The ID Meta assigns to this restaurant's WhatsApp Business number (metadata.phone_number_id
+    # in the webhook payload). This is NOT the same as whatsapp_number (a human-readable phone
+    # number) — Meta's phone_number_id is a separate numeric ID used to route/send messages.
+    phone_number_id: Mapped[str | None] = mapped_column(String(50), unique=True)
+    # 🆕 Owner's personal WhatsApp number, used to send escalation alerts (Section 12).
+    owner_whatsapp_number: Mapped[str | None] = mapped_column(String(50))
     timezone: Mapped[str] = mapped_column(String(50), default="Asia/Karachi")
     delivery_radius_km: Mapped[Decimal | None] = mapped_column(Numeric(5,2))
     delivery_fee: Mapped[Decimal] = mapped_column(Numeric(10,2), default=0)
@@ -65,6 +71,12 @@ class Conversation(Base):
     customer_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
     status: Mapped[str] = mapped_column(String(50), default="active")
     order_stage: Mapped[str] = mapped_column(String(50), default="browsing")
+    # 🆕 Persists the running cart + address/payment across multiple WhatsApp messages.
+    # Shape: {"items": [{"item_id":.., "name":.., "qty":.., "variant":.., "addons":[..], "price":..}],
+    #          "delivery_address": str|None, "payment_method": str|None}
+    cart: Mapped[dict] = mapped_column(JSONB, default=dict)
+    # 🆕 Updated on every inbound/outbound message; used for the 30-min / 24-hour timeout rules (Section 15.7).
+    last_activity_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     escalated_reason: Mapped[str | None] = mapped_column(Text)

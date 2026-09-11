@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Request, Query, HTTPException
 from app.config import get_settings
 from app.channels.whatsapp.handler import WhatsAppHandler
+from app.channels.whatsapp.verify import verify_signature
 from app.db.session import SessionLocal
 from app.db.models import Restaurant
 from sqlalchemy import select
 from app.workers.queue import enqueue_message
+import json
 
 router=APIRouter(prefix="/webhooks/whatsapp",tags=["whatsapp"])
 handler=WhatsAppHandler()
@@ -15,7 +17,12 @@ async def verify(hub_mode:str=Query(alias="hub.mode"),hub_verify_token:str=Query
     return int(hub_challenge) if hub_challenge.isdigit() else hub_challenge
 @router.post("")
 async def receive(request:Request):
-    payload=await request.json()
+    s=get_settings()
+    raw_body=await request.body()
+    signature=request.headers.get("X-Hub-Signature-256")
+    if not verify_signature(raw_body,signature,s.whatsapp_app_secret):
+        raise HTTPException(status_code=401,detail="Invalid signature")
+    payload=json.loads(raw_body)
     normalized=handler.process_webhook(payload)
     for msg in normalized:
         if not msg["phone_number_id"] or not msg["from"]:continue
