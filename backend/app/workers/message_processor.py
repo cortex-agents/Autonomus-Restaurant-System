@@ -17,14 +17,10 @@ ABANDON_AFTER=timedelta(minutes=30)
 DISCARD_AFTER=timedelta(hours=24)
 
 async def _resolve_restaurant(session,payload):
-    # 🆕 Correct mapping: Meta's phone_number_id (not the human-readable whatsapp_number).
+    # Meta's phone_number_id (not the human-readable whatsapp_number) is the routing key.
     phone_number_id=payload.get("phone_number_id")
-    r=None
-    if phone_number_id:
-        r=(await session.execute(select(Restaurant).where(Restaurant.phone_number_id==phone_number_id))).scalar_one_or_none()
-    if not r and payload.get("display_phone_number"):
-        r=(await session.execute(select(Restaurant).where(Restaurant.whatsapp_number==payload.get("display_phone_number")))).scalar_one_or_none()
-    return r
+    if not phone_number_id: return None
+    return (await session.execute(select(Restaurant).where(Restaurant.phone_number_id==phone_number_id))).scalar_one_or_none()
 
 async def _get_or_create_conversation_with_timeout(session,restaurant_id,customer_id):
     """30-min abandon / 24-hour discard rules per docs/product-spec.md Section 15.7."""
