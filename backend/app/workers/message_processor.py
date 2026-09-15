@@ -84,8 +84,10 @@ async def process_message(payload):
                 session.add(Message(conversation_id=conv.id,direction="outbound",role="agent",content=reply))
                 conv.last_activity_at=datetime.now(timezone.utc)
                 await session.commit()
-            try: await WhatsAppHandler().send_message(r.phone_number_id or payload.get("phone_number_id"),payload["from"],reply)
-            except Exception: pass
+            try:
+                await WhatsAppHandler().send_message(r.phone_number_id or payload.get("phone_number_id"), payload["from"], reply)
+            except Exception:
+                pass
 
 async def worker():
     redis=Redis.from_url(get_settings().redis_url,decode_responses=True)

@@ -2,15 +2,23 @@ from uuid import UUID
 from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import select, delete
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.db.models import Restaurant, MenuCategory, MenuItem
 from app.deps import get_current_restaurant
 
 router=APIRouter(prefix="/api/menu",tags=["menu"])
+
 class ItemIn(BaseModel):
     name:str; description:str|None=None; base_price:Decimal=Field(ge=0); category_id:UUID|None=None; variants:list=[]; addons:list=[]
+
+# 🆕 Separate PATCH schema — every field optional, so a partial update
+# (e.g. price only) never wipes out fields the caller didn't send.
+class ItemPatch(BaseModel):
+    name:str|None=None; description:str|None=None; base_price:Decimal|None=Field(default=None,ge=0)
+    category_id:UUID|None=None; variants:list|None=None; addons:list|None=None
+
 class AvailabilityIn(BaseModel): is_available:bool
 
 @router.get("")
@@ -38,11 +46,13 @@ async def create_item(body:ItemIn,restaurant=Depends(get_current_restaurant),ses
     i=MenuItem(restaurant_id=restaurant.id,**body.model_dump());session.add(i);await session.commit();await session.refresh(i);return item_dict(i)
 
 @router.patch("/items/{id}")
-async def edit_item(id:UUID,body:ItemIn,restaurant=Depends(get_current_restaurant),session:AsyncSession=Depends(get_db)):
+async def edit_item(id:UUID,body:ItemPatch,restaurant=Depends(get_current_restaurant),session:AsyncSession=Depends(get_db)):
     i=(await session.execute(select(MenuItem).where(MenuItem.id==id,MenuItem.restaurant_id==restaurant.id))).scalar_one_or_none()
     if not i:raise HTTPException(status_code=404,detail="Menu item not found")
-    await category_check(session,restaurant.id,body.category_id)
-    for k,v in body.model_dump().items():setattr(i,k,v)
+    updates=body.model_dump(exclude_unset=True)
+    if "category_id" in updates:
+        await category_check(session,restaurant.id,updates["category_id"])
+    for k,v in updates.items():setattr(i,k,v)
     await session.commit();await session.refresh(i);return item_dict(i)
 
 @router.patch("/items/{id}/availability")

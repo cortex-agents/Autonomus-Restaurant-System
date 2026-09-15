@@ -10,7 +10,7 @@ router=APIRouter(prefix="/api/settings",tags=["settings"])
 class SettingsIn(BaseModel):
     opening_time:time|None=None; closing_time:time|None=None; delivery_radius_km:Decimal|None=Field(default=None,ge=0); delivery_fee:Decimal|None=Field(default=None,ge=0); min_order_amount:Decimal|None=Field(default=None,ge=0); brand_voice:str|None=None; timezone:str|None=None
 
-def out(r):return {"opening_time":r.opening_time,"closing_time":r.closing_time,"delivery_radius_km":float(r.delivery_radius_km) if r.delivery_radius_km is not None else None,"delivery_fee":float(r.delivery_fee),"min_order_amount":float(r.min_order_amount),"brand_voice":r.brand_voice,"timezone":r.timezone}
+def out(r):return {"name":r.name,"opening_time":r.opening_time,"closing_time":r.closing_time,"delivery_radius_km":float(r.delivery_radius_km) if r.delivery_radius_km is not None else None,"delivery_fee":float(r.delivery_fee),"min_order_amount":float(r.min_order_amount),"brand_voice":r.brand_voice,"timezone":r.timezone}
 @router.get("")
 async def get_settings(restaurant=Depends(get_current_restaurant)):return out(restaurant)
 @router.patch("")

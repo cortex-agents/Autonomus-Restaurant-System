@@ -19,7 +19,10 @@ async def list_orders(status: str|None=None, page:int=Query(1,ge=1), page_size:i
     if status:q=q.where(Order.status==status)
     q=q.order_by(Order.created_at.desc()).offset((page-1)*page_size).limit(page_size)
     rows=(await session.execute(q)).scalars().all()
-    return {"items":[order_dict(o) for o in rows],"page":page,"page_size":page_size}
+    count_q=select(func.count()).select_from(Order).where(Order.restaurant_id==restaurant.id)
+    if status:count_q=count_q.where(Order.status==status)
+    total=(await session.execute(count_q)).scalar_one()
+    return {"items":[order_dict(o) for o in rows],"page":page,"page_size":page_size,"total":total}
 
 def order_dict(o):
     return {"id":str(o.id),"items":o.items,"subtotal":float(o.subtotal),"delivery_fee":float(o.delivery_fee),"total":float(o.total),"delivery_address":o.delivery_address,"payment_method":o.payment_method,"status":o.status,"created_at":o.created_at}
