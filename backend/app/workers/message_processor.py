@@ -74,14 +74,19 @@ async def process_message(payload):
                 session.add(Message(conversation_id=conv.id,direction="inbound",role="customer",content=payload["content"],whatsapp_message_id=payload.get("whatsapp_message_id")))
                 await session.flush()
                 try:
-                    reply=await asyncio.wait_for(AgentService(session,r,customer,conv).handle(payload["content"]),timeout=10)
-                except Exception:
+                    reply=await asyncio.wait_for(AgentService(session,r,customer,conv).handle(payload["content"]),timeout=30)
+                except Exception as e:
+                    print(f"AgentService ERROR: {type(e).__name__}: {e}", flush=True)
                     reply="Thori dair lag rahi hai, ek minute mein wapas aata hoon"
                 session.add(Message(conversation_id=conv.id,direction="outbound",role="agent",content=reply))
                 conv.last_activity_at=datetime.now(timezone.utc)
                 await session.commit()
             try:
-                await WhatsAppHandler().send_message(r.phone_number_id or payload.get("phone_number_id"), payload["from"], reply)
+                if get_settings().active_channel == "evolution":
+                    from app.channels.evolution.handler import EvolutionHandler
+                    await EvolutionHandler().send_message(r.phone_number_id or payload.get("phone_number_id"), payload["from"], reply)
+                else:
+                    await WhatsAppHandler().send_message(r.phone_number_id or payload.get("phone_number_id"), payload["from"], reply)
             except Exception:
                 pass
 

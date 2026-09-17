@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4.1-mini"
     cors_origins: str = "http://localhost:3000"
     owner_accounts_file: str = "/data/owner_accounts.json"
+    # 🆕 "meta" is production default. "evolution" is for local testing only (Baileys/Evolution API).
+    active_channel: str = "meta"
+    evolution_base_url: str = "http://evolution:8080"
+    evolution_api_key: str | None = None
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @property

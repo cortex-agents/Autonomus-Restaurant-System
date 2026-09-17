@@ -50,6 +50,14 @@ class AgentService:
 
         if not _is_open(self.restaurant):
             return f"Hum abhi closed hain — timing {self.restaurant.opening_time} se {self.restaurant.closing_time} tak hai."
+                # Critical checkout states must stay deterministic.
+        # The LLM should not override persisted cart/address/payment state.
+        if self.conversation.order_stage in (
+            "awaiting_address",
+            "awaiting_payment",
+            "confirming",
+        ):
+            return await self._handle_deterministic(text)
 
         # Try the real LLM-driven path first (only if a key is configured).
         try:

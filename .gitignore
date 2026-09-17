@@ -1,3 +1,4 @@
+```gitignore
 # ================================
 # Environment / Secrets
 # ================================
@@ -9,6 +10,9 @@
 *.pem
 *.key
 *.crt
+*.p12
+*.pfx
+*.secret
 credentials.json
 secrets.json
 owner_accounts.json
@@ -84,7 +88,7 @@ Thumbs.db
 desktop.ini
 
 # ================================
-# Node / Frontend (if created locally)
+# Node / Frontend
 # ================================
 node_modules/
 .next/
@@ -98,8 +102,11 @@ tmp/
 temp/
 *.tmp
 *.bak
+# WhatsApp / local QR files
+whatsapp_qr*.png
 
 # ================================
 # Docker local overrides
 # ================================
 docker-compose.override.yml
+```
