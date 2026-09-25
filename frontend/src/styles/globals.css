@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-display: "Playfair Display", serif;
+    --font-body: "Inter", sans-serif;
+    --background: 0 0% 100%;
+    --foreground: 20 5% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 20 5% 15%;
+
+    --pop: 0 0% 100%;
+    --pop-foreground: 15 65% 40%;
+
+    --border: 0 0% 85%;
+    --input: 0 0% 85%;
+    --ring: 35 50% 60%;
+
+    --primary: 350 25% 20%; /* Deep burgundy/wine - sophisticated restaurant color */
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 25 30% 35%; /* Warm terracotta/brown - earthy, inviting */
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 30 10% 40%;
+    --muted-foreground: 30 5% 65%;
+
+    --accent: 40 50% 50%; /* Rich gold - premium, warm */
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 70% 50%; /* Standard red for destructive actions */
+    --destructive-foreground: 0 0% 98%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 20 10% 8%; /* Dark charcoal for upscale dark mode */
+    --foreground: 30 5% 90%;
+
+    --card: 20 10% 12%;
+    --card-foreground: 30 5% 90%;
+
+    --pop: 15 65% 40%; /* Keep the warm pop color for dark mode */
+    --pop-foreground: 15 65% 40%;
+
+    --border: 25 15% 25%;
+    --input: 25 15% 25%;
+    --ring: 35 50% 60%;
+
+    --primary: 350 25% 25%; /* Slightly lighter burgundy for dark mode */
+    --primary-foreground: 0 0% 95%;
+
+    --secondary: 25 30% 40%; /* Lighter terracotta for dark mode */
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 25 12% 35%;
+    --muted-foreground: 25 5% 60%;
+
+    --accent: 40 50% 50%; /* Keep gold accent */
+    --accent-foreground: 0 0% 95%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 90%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Utility classes for restaurant-specific design */
+@layer utilities {
+  /* Subtle elevation for cards */
+  .elevation-1 {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+  
+  .elevation-2 {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  .elevation-3 {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Hover lift effect */
+  .hover-lift {
+    transition-transform: transform 0.2s ease;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+  
+  /* Stylish borders */
+  .border-elegant {
+    border-style: solid;
+    border-width: 1px;
+    border-image-source: linear-gradient(
+      to right,
+      transparent,
+      hsl(var(--accent)),
+      transparent
+    );
+    border-image-slice: 1;
+  }
+  
+  /* Subtle animations */
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+  }
+  
+  .animate-staggered {
+    animation-delay: calc(var(--delay, 0) * 100ms);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
