@@ -23,8 +23,8 @@ const formatDate = (dateString: string) => {
 
 const getMessageVariants = (direction: MessageProps['message']['direction']) => {
   return direction === "inbound"
-    ? "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800"
-    : "bg-gray-50 dark:bg-gray-900/30 border-gray-200 dark:border-gray-800";
+    ? "bg-blue-50 border-blue-200"
+    : "bg-background border-border";
 };
 
 const getMessageAlignment = (direction: MessageProps['message']['direction']) => {
@@ -48,13 +48,13 @@ export const Message = ({ message }: MessageProps) => {
             </div>
           )}
           {message.role === "system" && (
-            <div className="h-8 w-8 bg-gray-500 rounded-full flex items-center justify-center text-white text-sm">
+            <div className="h-8 w-8 bg-muted-foreground rounded-full flex items-center justify-center text-white text-sm">
               ⚙
             </div>
           )}
         </div>
         <div className="ml-3 flex-1 space-y-1">
-          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+          <div className="flex justify-between text-xs text-muted-foreground mb-1">
             <span className="font-medium">
               {message.role === "customer" ? "Customer" :
                message.role === "agent" ? "Agent" :
@@ -62,7 +62,7 @@ export const Message = ({ message }: MessageProps) => {
             </span>
             <span>{formatDate(message.created_at)}</span>
           </div>
-          <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed whs-pre-wrap">
+          <p className="text-sm text-foreground leading-relaxed whs-pre-wrap">
             {message.content}
           </p>
         </div>

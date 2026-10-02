@@ -103,7 +103,7 @@ const MenuItemForm = ({
     <form onSubmit={handleSave} className="space-y-6">
       <div className="space-y-4">
         <div>
-          <label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="name" className="text-sm font-medium text-foreground/80 mb-1">
             Item Name
           </label>
           <Input
@@ -118,7 +118,7 @@ const MenuItemForm = ({
         </div>
 
         <div>
-          <label htmlFor="description" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="description" className="text-sm font-medium text-foreground/80 mb-1">
             Description (optional)
           </label>
           <Input
@@ -132,11 +132,11 @@ const MenuItemForm = ({
         </div>
 
         <div>
-          <label htmlFor="base-price" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor="base-price" className="text-sm font-medium text-foreground/80 mb-1">
             Base Price (PKR)
           </label>
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">₨</span>
+            <span className="text-sm font-medium text-foreground/80">₨</span>
             <Input
               id="base-price"
               type="number"
@@ -160,7 +160,7 @@ const MenuItemForm = ({
           />
         </div>
 
-        <div className="border-t border-gray-200 pt-4">
+        <div className="border-t border-border pt-4">
           <AvailabilityToggle
             itemId={item?.id ?? "new-item"}
             isAvailable={isAvailable}
@@ -169,8 +169,8 @@ const MenuItemForm = ({
         </div>
 
         {/* Variants Section */}
-        <div className="border-t border-gray-200 pt-4">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+        <div className="border-t border-border pt-4">
+          <h3 className="text-sm font-medium text-foreground/80 mb-3">
             Variants
           </h3>
           <div className="space-y-2">
@@ -188,7 +188,7 @@ const MenuItemForm = ({
                   className="flex-1"
                 />
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">+ ₨</span>
+                  <span className="text-sm text-muted-foreground">+ ₨</span>
                   <Input
                     type="number"
                     value={variant.price_delta}
@@ -227,8 +227,8 @@ const MenuItemForm = ({
         </div>
 
         {/* Addons Section */}
-        <div className="border-t border-gray-200 pt-4">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+        <div className="border-t border-border pt-4">
+          <h3 className="text-sm font-medium text-foreground/80 mb-3">
             Add-ons
           </h3>
           <div className="space-y-2">
@@ -246,7 +246,7 @@ const MenuItemForm = ({
                   className="flex-1"
                 />
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">+ ₨</span>
+                  <span className="text-sm text-muted-foreground">+ ₨</span>
                   <Input
                     type="number"
                     value={addon.price}

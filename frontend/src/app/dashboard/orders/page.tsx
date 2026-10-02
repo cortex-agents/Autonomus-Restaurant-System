@@ -2,19 +2,15 @@
 
 import { useOrders } from "@/hooks/useOrders";
 import { useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { OrderCard } from "@/components/ui/OrderCard";
 import { Button } from "@/components/ui/button";
-import { ArrowPathIcon, CalendarDaysIcon, ListBulletIcon } from "@heroicons/react/24/outline";
-import { Playfair_Display } from "next/font/google";
-import { Inter } from "next/font/google";
-import { HomeIcon } from "lucide-react";
+import { ArrowPathIcon, ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import { formatCurrency } from "@/lib/format";
 
-const playfairDisplay = Playfair_Display({ subsets: ['latin'], weight: ['500', '600', '700'] });
-const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600'] });
 
-export default function OrdersPage() {
+function OrdersContent() {
   const searchParams = useSearchParams();
   const {
     orders,
@@ -34,7 +30,6 @@ export default function OrdersPage() {
 
   const [statusFilter, setStatusFilter] = useState<string | null>(searchParams.get('status') || null);
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   // Handle status change
   const handleStatusChange = (orderId: string, newStatus: string) => {
@@ -68,19 +63,34 @@ export default function OrdersPage() {
     window.history.replaceState({}, '', newUrl);
   };
 
+  const TABS: { label: string; value: string | null }[] = [
+    { label: "All", value: null },
+    { label: "Pending", value: "pending" },
+    { label: "Confirmed", value: "confirmed" },
+    { label: "Preparing", value: "preparing" },
+    { label: "Out for delivery", value: "out_for_delivery" },
+    { label: "Delivered", value: "delivered" },
+    { label: "Cancelled", value: "cancelled" },
+  ];
+
+  const goToPage = (nextPage: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', String(nextPage));
+    window.history.replaceState({}, '', `/dashboard/orders?${params.toString()}`);
+    refetch();
+  };
+
+  const revenue = orders.reduce((sum, order) => sum + order.total_amount, 0);
+  const average = orders.length ? revenue / orders.length : 0;
+
   if (isLoading) {
     return (
-      <div className="min-h-[calc(100vh-64px)] py-8">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center py-12">
-            <div className="inline-block animate-pulse rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-            <p className={`${playfairDisplay.className} text-lg font-medium text-foreground dark:text-[#e2e8f0] mb-2`}>
-              Loading orders...
-            </p>
-            <p className={`${inter.className} text-sm text-muted-foreground dark:text-muted`}>
-              Fetching your latest orders from the kitchen
-            </p>
-          </div>
+      <div className="page-container py-8">
+        <div className="h-9 w-56 animate-pulse rounded-lg bg-muted" />
+        <div className="mt-6 space-y-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="card-surface h-44 animate-pulse bg-muted/60" />
+          ))}
         </div>
       </div>
     );
@@ -88,206 +98,142 @@ export default function OrdersPage() {
 
   if (error) {
     return (
-      <div className="min-h-[calc(100vh-64px)] py-8">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="p-6 bg-red-50 border border-red-200 text-red-500 rounded-md dark:bg-red-50 dark:text-red-400 dark:border-red-300">
-            <p className={`${inter.className} font-medium`}>
-              Error loading orders: {error instanceof Error ? error.message : String(error)}
-            </p>
-            <div className="mt-4 flex justify-center">
-              <Button onClick={() => refetch()} className="px-4 py-2">
-                Retry
-              </Button>
-            </div>
-          </div>
+      <div className="page-container flex min-h-[60vh] items-center justify-center py-8">
+        <div className="card-surface max-w-md p-8 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-xl">⚠️</div>
+          <h2 className="mt-4 font-display text-xl font-semibold">Couldn&apos;t load orders</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {error instanceof Error ? error.message : String(error)}
+          </p>
+          <Button onClick={() => refetch()} className="mt-6">Retry</Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-background dark:bg-[#0a0a0a]">
+    <div className="page-container py-6 sm:py-8">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-border dark:border-[#334155]">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h1 className={`${playfairDisplay.className} text-2xl font-bold text-foreground dark:text-[#e2e8f0]`}>
-                Orders Management
-              </h1>
-              <p className={`${inter.className} mt-1 text-sm text-muted-foreground dark:text-muted`}>
-                {total} total orders • {orders.length} shown
-              </p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setStatusFilter(null);
-                  const params = new URLSearchParams(searchParams);
-                  params.delete('status');
-                  params.delete('page');
-                  const newUrl = `/dashboard/orders${params.toString() ? `?${params.toString()}` : ''}`;
-                  window.history.replaceState({}, '', newUrl);
-                  refetch();
-                }}
-                className={statusFilter === null ? "bg-accent/10 text-accent hover:bg-accent/20" : ""}
-              >
-                <CalendarDaysIcon className="h-4 w-4 mr-2" />
-                All Orders
-              </Button>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="eyebrow">Kitchen</p>
+          <h1 className="mt-1 font-display text-3xl font-semibold text-foreground sm:text-4xl">Orders</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {total} total · {orders.length} shown · updates every 30s
+          </p>
+        </div>
+        <Button onClick={() => refetch()} variant="outline">
+          <ArrowPathIcon className="h-4 w-4" />
+          Refresh
+        </Button>
+      </header>
 
-              <Button
-                variant="outline"
-                onClick={() => {
-                  handleStatusFilterChange('pending');
-                }}
-                className={statusFilter === 'pending' ? "bg-accent/10 text-accent hover:bg-accent/20" : ""}
+      {/* Filter tabs */}
+      <div className="-mx-4 mt-6 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <div className="inline-flex gap-1 rounded-xl border border-border bg-card p-1 shadow-soft">
+          {TABS.map((tab) => {
+            const active = statusFilter === tab.value;
+            return (
+              <button
+                key={tab.label}
+                onClick={() => handleStatusFilterChange(tab.value)}
+                aria-pressed={active}
+                className={`whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
               >
-                Pending
-              </Button>
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-              <Button
-                variant="outline"
-                onClick={() => {
-                  handleStatusFilterChange('confirmed');
-                }}
-                className={statusFilter === 'confirmed' ? "bg-accent/10 text-accent hover:bg-accent/20" : ""}
-              >
-                Confirmed
-              </Button>
-
-              <Button
-                variant="default"
-                onClick={() => refetch()}
-                size="sm"
-                className="hover:bg-accent/5"
-              >
-                <ArrowPathIcon className="h-4 w-4 mr-2" />
-                <span className={`${inter.className} text-sm`}>Refresh</span>
-              </Button>
-            </div>
+      {orders.length === 0 ? (
+        <div className="card-surface mt-6 px-6 py-16 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted text-2xl">🧾</div>
+          <p className="mt-4 font-display text-xl font-semibold">
+            {statusFilter ? `No ${statusFilter.replace(/_/g, " ")} orders` : "No orders yet"}
+          </p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+            Orders appear here when customers place them through WhatsApp or other channels.
+          </p>
+          <div className="mt-6 flex justify-center gap-3">
+            <Button variant="outline" onClick={() => refetch()}>Check for new orders</Button>
+            <Link
+              href="/dashboard/menu"
+              className="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium text-primary hover:bg-primary/5"
+            >
+              Update menu
+            </Link>
           </div>
         </div>
-      </div>
-
-      {/* Orders List */}
-      <div className="px-6 py-8">
-        <div className="max-w-7xl mx-auto">
-          {orders.length === 0 ? (
-            <div className="text-center py-12">
-              <p className={`${inter.className} text-muted-foreground`}>
-                {statusFilter ? `No ${statusFilter} orders` : "No orders yet"}
-              </p>
-              <div className="mt-6 flex justify-center space-x-4">
-                <Button
-                  variant="outline"
-                  onClick={() => refetch()}
-                  className="hover:bg-accent/5"
-                >
-                  Check for New Orders
-                </Button>
-                <Link href="/dashboard/menu" className="text-sm font-medium text-primary hover:text-primary/80">
-                  Update Menu
-                </Link>
+      ) : (
+        <>
+          {/* Summary */}
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="card-surface flex items-center gap-4 p-4">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-success/10 text-lg">💰</span>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Revenue (shown)</p>
+                <p className="font-display text-2xl font-semibold tabular-nums">{formatCurrency(revenue)}</p>
               </div>
-              {statusFilter === null && (
-                <div className="mt-8 text-sm text-muted-foreground dark:text-muted dark:text-muted">
-                  Orders appear here when customers place them through WhatsApp or other channels.
-                </div>
-              )}
             </div>
-          ) : (
-            <>
-              {/* Orders Summary Bar */}
-              <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center space-x-3 mb-3 sm:mb-0">
-                  <div className="h-8 w-8 bg-primary/10 dark:bg-primary/20 rounded flex items-center justify-center">
-                    <ListBulletIcon className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className={`${inter.className} text-sm font-medium text-muted-foreground dark:text-muted`}>
-                      Total Revenue
-                    </p>
-                    <p className={`${playfairDisplay.className} text-lg font-bold text-foreground dark:text-[#e2e8f0]`}>
-                      ₨{orders.reduce((sum, order) => sum + order.total_amount, 0).toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="h-8 w-8 bg-primary/10 dark:bg-primary/20 rounded flex items-center justify-center">
-                    <HomeIcon className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className={`${inter.className} text-sm font-medium text-muted-foreground dark:text-muted`}>
-                      Average Order Value
-                    </p>
-                    <p className={`${playfairDisplay.className} text-lg font-bold text-foreground dark:text-[#e2e8f0]`}>
-                      ₨{(orders.reduce((sum, order) => sum + order.total_amount, 0) / orders.length || 0).toFixed(2)}
-                    </p>
-                  </div>
-                </div>
+            <div className="card-surface flex items-center gap-4 p-4">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 text-lg">🧮</span>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Average order</p>
+                <p className="font-display text-2xl font-semibold tabular-nums">{formatCurrency(average)}</p>
               </div>
+            </div>
+          </div>
 
-              {/* Orders List */}
-              <div className="space-y-4">
-                {orders.map((order) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    onStatusChange={handleStatusChange}
-                    className="hover:shadow-lg transition-shadow duration-300"
-                  />
-                ))}
+          {/* Orders */}
+          <div className="mt-6 grid gap-4 xl:grid-cols-2">
+            {orders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                onStatusChange={handleStatusChange}
+              />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {total > limit && (
+            <nav className="card-surface mt-8 flex flex-wrap items-center justify-between gap-3 px-4 py-3" aria-label="Pagination">
+              <p className="text-sm text-muted-foreground">
+                Showing {(page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total} orders
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => goToPage(page - 1)}>
+                  <ChevronLeftIcon className="h-4 w-4" /> Previous
+                </Button>
+                <Button variant="outline" size="sm" disabled={page * limit >= total} onClick={() => goToPage(page + 1)}>
+                  Next <ChevronRightIcon className="h-4 w-4" />
+                </Button>
               </div>
-              
-              {/* Pagination */}
-              {total > limit && (
-                <div className="mt-8 flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 rounded-lg border border-border dark:border-[#334155]">
-                  <div className={`${inter.className} text-sm text-muted-foreground dark:text-muted`}>
-                    Showing {((page - 1) * limit) + 1} - {Math.min(page * limit, total)} of {total} orders
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {page > 1 && (
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          const params = new URLSearchParams(searchParams);
-                          params.set('page', String(page - 1));
-                          const newUrl = `/dashboard/orders${params.toString() ? `?${params.toString()}` : ''}`;
-                          window.history.replaceState({}, '', newUrl);
-                          refetch();
-                        }}
-                        size="sm"
-                      >
-                        <ArrowPathIcon className="h-4 w-4 mr-2" />
-                        Previous
-                      </Button>
-                    )}
-                    {page * limit < total && (
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          const params = new URLSearchParams(searchParams);
-                          params.set('page', String(page + 1));
-                          const newUrl = `/dashboard/orders${params.toString() ? `?${params.toString()}` : ''}`;
-                          window.history.replaceState({}, '', newUrl);
-                          refetch();
-                        }}
-                        size="sm"
-                      >
-                        Next
-                        <ArrowPathIcon className="ml-2 h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </>
+            </nav>
           )}
-        </div>
-      </div>
+        </>
+      )}
     </div>
+  );
+}
+
+export default function OrdersPage() {
+  // useSearchParams() must sit under a Suspense boundary for `next build`
+  return (
+    <Suspense
+      fallback={
+        <div className="page-container py-8">
+          <div className="h-9 w-56 animate-pulse rounded-lg bg-muted" />
+        </div>
+      }
+    >
+      <OrdersContent />
+    </Suspense>
   );
 }

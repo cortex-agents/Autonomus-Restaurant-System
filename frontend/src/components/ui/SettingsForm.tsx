@@ -73,19 +73,19 @@ export const SettingsForm = ({
 
   return (
     <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
-      <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+      <div className="border rounded-lg p-4 bg-card shadow-sm">
+        <h3 className="text-lg font-medium text-foreground mb-4">
           Restaurant: {restaurantName}
         </h3>
 
         {/* Operational Hours */}
-        <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-4">
-          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+        <div className="border-b border-border pb-4 mb-4">
+          <h4 className="text-sm font-medium text-foreground mb-2">
             Operational Hours
           </h4>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+              <label className="block text-xs text-muted-foreground mb-1">
                 Opening Time
               </label>
               <Input
@@ -97,7 +97,7 @@ export const SettingsForm = ({
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+              <label className="block text-xs text-muted-foreground mb-1">
                 Closing Time
               </label>
               <Input
@@ -112,13 +112,13 @@ export const SettingsForm = ({
         </div>
 
         {/* Delivery Settings */}
-        <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-4">
-          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+        <div className="border-b border-border pb-4 mb-4">
+          <h4 className="text-sm font-medium text-foreground mb-2">
             Delivery Settings
           </h4>
           <div className="space-y-3">
             <div className="flex items-center">
-              <label className="w-40 text-xs text-gray-500 dark:text-gray-400">
+              <label className="w-40 text-xs text-muted-foreground">
                 Delivery Radius (km)
               </label>
               <Input
@@ -131,16 +131,16 @@ export const SettingsForm = ({
                 disabled={isUpdating}
                 className="w-24"
               />
-              <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+              <span className="ml-2 text-xs text-muted-foreground">
                 kilometers
               </span>
             </div>
             <div className="flex items-center">
-              <label className="w-40 text-xs text-gray-500 dark:text-gray-400">
+              <label className="w-40 text-xs text-muted-foreground">
                 Delivery Fee
               </label>
               <div className="flex items-center space-x-2">
-                <span className="text-xs text-gray-500 dark:text-gray-400">₨</span>
+                <span className="text-xs text-muted-foreground">₨</span>
                 <Input
                   type="number"
                   value={formState.delivery_fee}
@@ -152,16 +152,16 @@ export const SettingsForm = ({
                   className="w-20"
                 />
               </div>
-              <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+              <span className="ml-2 text-xs text-muted-foreground">
                 per order
               </span>
             </div>
             <div className="flex items-center">
-              <label className="w-40 text-xs text-gray-500 dark:text-gray-400">
+              <label className="w-40 text-xs text-muted-foreground">
                 Minimum Order Amount
               </label>
               <div className="flex items-center space-x-2">
-                <span className="text-xs text-gray-500 dark:text-gray-400">₨</span>
+                <span className="text-xs text-muted-foreground">₨</span>
                 <Input
                   type="number"
                   value={formState.min_order_amount}
@@ -175,7 +175,7 @@ export const SettingsForm = ({
                   className="w-20"
                 />
               </div>
-              <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+              <span className="ml-2 text-xs text-muted-foreground">
                 per order
               </span>
             </div>
@@ -183,13 +183,13 @@ export const SettingsForm = ({
         </div>
 
         {/* Brand & Localization */}
-        <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-4">
-          <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+        <div className="border-b border-border pb-4 mb-4">
+          <h4 className="text-sm font-medium text-foreground mb-2">
             Brand & Localization
           </h4>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+              <label className="block text-xs text-muted-foreground mb-1">
                 Brand Voice
               </label>
               <Input
@@ -202,7 +202,7 @@ export const SettingsForm = ({
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+              <label className="block text-xs text-muted-foreground mb-1">
                 Timezone
               </label>
               <Input

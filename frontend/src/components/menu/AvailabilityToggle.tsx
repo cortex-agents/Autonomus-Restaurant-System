@@ -26,7 +26,7 @@ const AvailabilityToggle = ({
 
   return (
     <div className="flex items-center space-x-3">
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      <span className="text-sm font-medium text-foreground/80">
         Available
       </span>
       <Toggle

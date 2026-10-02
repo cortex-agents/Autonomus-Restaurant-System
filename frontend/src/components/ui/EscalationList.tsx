@@ -25,7 +25,7 @@ export const EscalationList = ({
     return (
       <div className="text-center py-8">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <p className="mt-4 text-gray-500">Loading escalations...</p>
+        <p className="mt-4 text-muted-foreground">Loading escalations...</p>
       </div>
     );
   }
@@ -33,7 +33,7 @@ export const EscalationList = ({
   if (escalations.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500">
+        <p className="text-muted-foreground">
           No escalations found
         </p>
       </div>
@@ -45,20 +45,20 @@ export const EscalationList = ({
       {escalations.map((esc) => (
         <div
           key={esc.id}
-          className={`cursor-pointer border rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow ${
+          className={`cursor-pointer border rounded-lg p-4 bg-card shadow-sm hover:shadow-md transition-shadow ${
             esc.status === "resolved" ? "opacity-75" : ""
           }`}
           onClick={() => onEscalationClick(esc.id)}
         >
           <div className="flex justify-between items-start mb-3">
             <div className="flex-1">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+              <h3 className="text-lg font-medium text-foreground">
                 Escalation #{esc.id.slice(0, 8)}
               </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+              <p className="text-sm text-muted-foreground mb-1">
                 {esc.reason}
               </p>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-muted-foreground">
                 Created: {formatDate(esc.created_at)}
                 {esc.resolved_at && (
                   <span className="ml-3">

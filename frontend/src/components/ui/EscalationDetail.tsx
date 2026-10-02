@@ -45,13 +45,13 @@ export const EscalationDetail = ({
   return (
     <div className="space-y-6">
       {/* Escalation Header */}
-      <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm">
+      <div className="border rounded-lg p-4 bg-card shadow-sm">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            <h2 className="text-xl font-bold text-foreground">
               Escalation Details
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               ID: {escalation.id.slice(0, 8)}...{escalation.id.slice(-4)}
             </p>
           </div>
@@ -76,19 +76,19 @@ export const EscalationDetail = ({
             )}
           </div>
         </div>
-        <div className="border-t border-gray-200 pt-4">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3">
+        <div className="border-t border-border pt-4">
+          <h3 className="text-lg font-medium text-foreground mb-3">
             Reason for Escalation
           </h3>
-          <p className="text-gray-700 dark:text-gray-300 leading-relaxed whs-pre-wrap">
+          <p className="text-foreground/80 leading-relaxed whs-pre-wrap">
             {escalation.reason}
           </p>
         </div>
-        <div className="border-t border-gray-200 pt-4">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-3">
+        <div className="border-t border-border pt-4">
+          <h3 className="text-lg font-medium text-foreground mb-3">
             Timeline
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             Created: {formatDate(escalation.created_at)}
             {escalation.resolved_at && (
               <>
@@ -101,13 +101,13 @@ export const EscalationDetail = ({
       </div>
 
       {/* Conversation Transcript */}
-      <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+      <div className="border rounded-lg p-4 bg-card shadow-sm">
+        <h2 className="text-xl font-bold text-foreground mb-4">
           Conversation Transcript
         </h2>
         <div className="space-y-4 max-h-96 overflow-y-auto">
           {escalation.messages.length === 0 ? (
-            <p className="text-center py-8 text-gray-500">
+            <p className="text-center py-8 text-muted-foreground">
               No messages in conversation
             </p>
           ) : (
@@ -121,13 +121,13 @@ export const EscalationDetail = ({
       </div>
 
       {/* Reply Section */}
-      <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+      <div className="border rounded-lg p-4 bg-card shadow-sm">
+        <h2 className="text-xl font-bold text-foreground mb-4">
           Send Reply
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground/80 mb-2">
               Your Response
             </label>
             <textarea
@@ -135,7 +135,7 @@ export const EscalationDetail = ({
               onChange={(e) => setReplyContent(e.target.value)}
               placeholder="Type your response to the customer..."
               rows={4}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              className={`w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
               disabled={isReplying}
             />
           </div>

@@ -20,7 +20,7 @@ const CategorySelector = ({
 }: CategorySelectorProps) => {
   return (
     <div className="relative w-full">
-      <label htmlFor="category-select" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+      <label htmlFor="category-select" className="text-sm font-medium text-foreground/80 mb-1">
         Category
       </label>
       <select

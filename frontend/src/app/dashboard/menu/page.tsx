@@ -5,12 +5,8 @@ import { useMenu } from "@/hooks/useMenu";
 import { Button } from "@/components/ui/button";
 import MenuItemForm from "@/components/menu/MenuItemForm";
 import { ArrowPathIcon, ListBulletIcon } from "@heroicons/react/24/outline";
-import { Playfair_Display } from "next/font/google";
-import { Inter } from "next/font/google";
 import { HomeIcon } from "lucide-react";
 
-const playfairDisplay = Playfair_Display({ subsets: ['latin'], weight: ['500', '600', '700'] });
-const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600'] });
 
 export default function MenuPage() {
   const {
@@ -98,11 +94,11 @@ export default function MenuPage() {
       <div className="min-h-[calc(100vh-64px)] py-8">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center py-12">
-            <div className="inline-block animate-pulse rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-            <p className={`${playfairDisplay.className} text-lg font-medium text-foreground dark:text-[#e2e8f0] mb-2`}>
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-primary/20 border-t-primary mb-4"></div>
+            <p className={`font-display text-lg font-medium text-foreground mb-2`}>
               Loading menu...
             </p>
-            <p className={`${inter.className} text-sm text-muted-foreground dark:text-muted`}>
+            <p className={`font-body text-sm text-muted-foreground`}>
               Fetching your restaurant's menu items
             </p>
           </div>
@@ -115,8 +111,8 @@ export default function MenuPage() {
     return (
       <div className="min-h-[calc(100vh-64px)] py-8">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="p-6 bg-red-50 border border-red-200 text-red-500 rounded-md dark:bg-red-50 dark:text-red-400 dark:border-red-300">
-            <p className={`${inter.className} font-medium`}>
+          <div className="p-6 bg-destructive/5 border border-destructive/25 text-destructive rounded-xl">
+            <p className={`font-body font-medium`}>
               Error loading menu: {error instanceof Error ? error.message : String(error)}
             </p>
             <div className="mt-4 flex justify-center">
@@ -140,16 +136,16 @@ export default function MenuPage() {
   ) + (uncategorized?.filter(item => item.is_available).length || 0);
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-background dark:bg-[#0a0a0a]">
+    <div className="min-h-[calc(100vh-64px)] bg-background">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-border dark:border-[#334155]">
+      <div className="bg-card shadow-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h1 className="${playfairDisplay.className} text-2xl font-bold text-foreground dark:text-[#e2e8f0]">
+              <h1 className="font-display text-2xl font-bold text-foreground">
                 Menu Management
               </h1>
-              <p className="${inter.className} mt-1 text-sm text-muted-foreground dark:text-muted">
+              <p className="font-body mt-1 text-sm text-muted-foreground">
                 {totalMenuItems} total items • {availableMenuItems} available
               </p>
             </div>
@@ -162,7 +158,7 @@ export default function MenuPage() {
               className="hover:bg-accent/5"
             >
               <ArrowPathIcon className="h-4 w-4 mr-2" />
-              <span className="${inter.className}">Add Item</span>
+              <span className="font-body">Add Item</span>
             </Button>
           </div>
         </div>
@@ -172,49 +168,49 @@ export default function MenuPage() {
       <div className="px-6 py-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-3 gap-6 mb-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-border dark:border-[#334155]">
+            <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex-1 space-y-1">
-                  <p className="${inter.className} text-sm font-medium text-muted-foreground dark:text-muted">
+                  <p className="font-body text-sm font-medium text-muted-foreground">
                     Total Items
                   </p>
-                  <p className="${playfairDisplay.className} text-2xl font-bold text-foreground dark:text-[#e2e8f0]">
+                  <p className="font-display text-2xl font-bold text-foreground">
                     {totalMenuItems}
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-primary/10 dark:bg-primary/20 rounded flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary/10 rounded flex items-center justify-center">
                   <HomeIcon className="h-5 w-5 text-primary" />
                 </div>
               </div>
             </div>
             
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-border dark:border-[#334155]">
+            <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex-1 space-y-1">
-                  <p className="${inter.className} text-sm font-medium text-muted-foreground dark:text-muted">
+                  <p className="font-body text-sm font-medium text-muted-foreground">
                     Available Items
                   </p>
-                  <p className="${playfairDisplay.className} text-2xl font-bold text-foreground dark:text-[#e2e8f0]">
+                  <p className="font-display text-2xl font-bold text-foreground">
                     {availableMenuItems}
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-success/10 dark:bg-success/20 rounded flex items-center justify-center">
+                <div className="w-10 h-10 bg-success/10 rounded flex items-center justify-center">
                   <HomeIcon className="h-5 w-5 text-success" />
                 </div>
               </div>
             </div>
             
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-border dark:border-[#334155]">
+            <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex-1 space-y-1">
-                  <p className="${inter.className} text-sm font-medium text-muted-foreground dark:text-muted">
+                  <p className="font-body text-sm font-medium text-muted-foreground">
                     Categories
                   </p>
-                  <p className="${playfairDisplay.className} text-2xl font-bold text-foreground dark:text-[#e2e8f0]">
+                  <p className="font-display text-2xl font-bold text-foreground">
                     {allCategories.length}
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-accent/10 dark:bg-accent/20 rounded flex items-center justify-center">
+                <div className="w-10 h-10 bg-accent/10 rounded flex items-center justify-center">
                   <ListBulletIcon className="h-5 w-5 text-accent" />
                 </div>
               </div>
@@ -228,9 +224,9 @@ export default function MenuPage() {
         <div className="max-w-7xl mx-auto">
           {/* Edit/Create Form */}
           {editingItemId !== null && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md mb-6">
+            <div className="bg-card rounded-xl p-6 shadow-md mb-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="${playfairDisplay.className} text-xl font-bold text-foreground dark:text-[#e2e8f0]">
+                <h2 className="font-display text-xl font-bold text-foreground">
                   {editingItemId ? 'Edit Menu Item' : 'Add New Item'}
                 </h2>
                 <Button
@@ -259,13 +255,13 @@ export default function MenuPage() {
           {/* Menu Categories */}
           <div className="space-y-6">
             {menuCategories.map((category: any) => (
-              <div key={category.id} className="border rounded-xl p-6 bg-white dark:bg-gray-800 shadow-sm">
+              <div key={category.id} className="border rounded-xl p-6 bg-card shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="${playfairDisplay.className} text-lg font-medium text-foreground dark:text-[#e2e8f0]">
+                  <h3 className="font-display text-lg font-medium text-foreground">
                     {category.name}
                   </h3>
                   <div className="flex items-center space-x-3">
-                    <p className="${inter.className} text-sm font-medium text-muted-foreground dark:text-muted">
+                    <p className="font-body text-sm font-medium text-muted-foreground">
                       {category.items?.length || 0} items
                     </p>
                     <Button
@@ -300,25 +296,25 @@ export default function MenuPage() {
                       <div key={item.id} className="border-t pt-4">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <h4 className="${playfairDisplay.className} text-base font-medium text-foreground dark:text-[#e2e8f0]">
+                            <h4 className="font-display text-base font-medium text-foreground">
                               {item.name}
                             </h4>
                             {item.description && (
-                              <p className="${inter.className} text-sm text-muted-foreground dark:text-muted mt-1">
+                              <p className="font-body text-sm text-muted-foreground mt-1">
                                 {item.description}
                               </p>
                             )}
                             <div className="mt-2 space-y-1">
                               {item.variants && item.variants.length > 0 && (
                                 <>
-                                  <h5 className="${inter.className} text-xs font-medium text-muted-foreground dark:text-muted mb-1">
+                                  <h5 className="font-body text-xs font-medium text-muted-foreground mb-1">
                                     Variants:
                                   </h5>
                                   <div className="text-sm space-y-0.5">
                                     {item.variants.map((variant: any) => (
                                       <div key={`${item.id}-variant-${variant.name}`} className="flex justify-between">
-                                        <span className="${inter.className}">{variant.name}</span>
-                                        <span className="${inter.className}">
+                                        <span className="font-body">{variant.name}</span>
+                                        <span className="font-body">
                                           ₨{variant.price_delta >= 0 ? '+' : ''}{variant.price_delta}
                                         </span>
                                       </div>
@@ -330,7 +326,7 @@ export default function MenuPage() {
                           </div>
                           <div className="ml-4 flex flex-col items-end space-x-3">
                             <div className="flex items-center space-x-3">
-                              <span className="${inter.className} text-sm font-medium text-gray-600 dark:text-gray-400">
+                              <span className="font-body text-sm font-medium text-muted-foreground">
                                 Available:
                               </span>
                               <button
@@ -367,7 +363,7 @@ export default function MenuPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center py-4 text-muted-foreground dark:text-muted">
+                  <p className="text-center py-4 text-muted-foreground">
                     No items in this category yet
                   </p>
                 )}
@@ -376,9 +372,9 @@ export default function MenuPage() {
             
             {/* Uncategorized Items */}
             {uncategorized && uncategorized.length > 0 && (
-              <div className="border rounded-xl p-6 bg-white dark:bg-gray-800 shadow-sm">
+              <div className="border rounded-xl p-6 bg-card shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="${playfairDisplay.className} text-lg font-medium text-foreground dark:text-[#e2e8f0]">
+                  <h3 className="font-display text-lg font-medium text-foreground">
                     Uncategorized Items
                   </h3>
                   <Button
@@ -410,25 +406,25 @@ export default function MenuPage() {
                       <div key={item.id} className="border-t pt-4">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <h4 className="${playfairDisplay.className} text-base font-medium text-foreground dark:text-[#e2e8f0]">
+                            <h4 className="font-display text-base font-medium text-foreground">
                               {item.name}
                             </h4>
                             {item.description && (
-                              <p className="${inter.className} text-sm text-muted-foreground dark:text-muted mt-1">
+                              <p className="font-body text-sm text-muted-foreground mt-1">
                                 {item.description}
                               </p>
                             )}
                             <div className="mt-2 space-y-1">
                               {item.variants && item.variants.length > 0 && (
                                 <>
-                                  <h5 className="${inter.className} text-xs font-medium text-muted-foreground dark:text-muted mb-1">
+                                  <h5 className="font-body text-xs font-medium text-muted-foreground mb-1">
                                     Variants:
                                   </h5>
                                   <div className="text-sm space-y-0.5">
                                     {item.variants.map((variant: any) => (
                                       <div key={`${item.id}-variant-${variant.name}`} className="flex justify-between">
-                                        <span className="${inter.className}">{variant.name}</span>
-                                        <span className="${inter.className}">
+                                        <span className="font-body">{variant.name}</span>
+                                        <span className="font-body">
                                           ₨{variant.price_delta >= 0 ? '+' : ''}{variant.price_delta}
                                         </span>
                                       </div>
@@ -440,7 +436,7 @@ export default function MenuPage() {
                           </div>
                           <div className="ml-4 flex flex-col items-end space-x-3">
                             <div className="flex items-center space-x-3">
-                              <span className="${inter.className} text-sm font-medium text-gray-600 dark:text-gray-400">
+                              <span className="font-body text-sm font-medium text-muted-foreground">
                                 Available:
                               </span>
                               <button
@@ -477,7 +473,7 @@ export default function MenuPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center py-4 text-muted-foreground dark:text-muted">
+                  <p className="text-center py-4 text-muted-foreground">
                     No uncategorized items yet
                   </p>
                 )}

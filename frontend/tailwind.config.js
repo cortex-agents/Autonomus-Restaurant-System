@@ -42,6 +42,18 @@ module.exports = {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
         pop: {
           DEFAULT: "hsl(var(--pop))",
           foreground: "hsl(var(--pop-foreground))",
@@ -51,7 +63,12 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+      boxShadow: {
+        soft: "0 1px 2px hsl(20 25% 12% / 0.04), 0 4px 16px hsl(20 25% 12% / 0.06)",
+        lift: "0 2px 4px hsl(20 25% 12% / 0.05), 0 12px 32px hsl(20 25% 12% / 0.10)",
+      },
       borderRadius: {
+        xl: "calc(var(--radius) + 4px)",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",

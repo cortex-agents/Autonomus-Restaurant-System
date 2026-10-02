@@ -1,21 +1,34 @@
 import "../styles/globals.css";
-import { Inter } from "next/font/google";
-import { Playfair_Display } from "next/font/google";
-import type { Metadata } from "next";
+import { Inter, Playfair_Display } from "next/font/google";
+import type { Metadata, Viewport } from "next";
 import { QueryClientProviderWrapper } from "@/components/providers/QueryClientProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
 
-// Initialize fonts to inject CSS (we don't need the className as we use CSS variables)
-const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600'] });
-const playfairDisplay = Playfair_Display({ subsets: ['latin'], weight: ['500', '600', '700'] });
-// Use the variables to prevent unused variable warnings
-inter;
-playfairDisplay;
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-body",
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-display",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "Restaurant Owner Dashboard",
-  description: "Manage your restaurant operations with AI-powered order taking",
+  title: "BistroBot — Restaurant Dashboard",
+  description:
+    "Run your restaurant on autopilot: WhatsApp AI order-taking, live orders, menu and customer escalations in one place.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#5f1a22",
 };
 
 export default function RootLayout({
@@ -24,14 +37,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <head></head>
+    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <body className="font-body">
         <AuthProvider>
           <ToastProvider>
-            <QueryClientProviderWrapper>
-              {children}
-            </QueryClientProviderWrapper>
+            <QueryClientProviderWrapper>{children}</QueryClientProviderWrapper>
           </ToastProvider>
         </AuthProvider>
       </body>

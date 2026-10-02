@@ -6,12 +6,8 @@ import { EscalationList } from "@/components/ui/EscalationList";
 import { EscalationDetail } from "@/components/ui/EscalationDetail";
 import { Button } from "@/components/ui/button";
 import { ArrowPathIcon, ChatBubbleLeftRightIcon, Cog6ToothIcon, ListBulletIcon } from "@heroicons/react/24/outline";
-import { Playfair_Display } from "next/font/google";
-import { Inter } from "next/font/google";
 import { CheckIcon } from "lucide-react";
 
-const playfairDisplay = Playfair_Display({ subsets: ['latin'], weight: ['500', '600', '700'] });
-const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600'] });
 
 export default function EscalationsPage() {
   const {
@@ -88,11 +84,11 @@ export default function EscalationsPage() {
       <div className="min-h-[calc(100vh-64px)] py-8">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center py-12">
-            <div className="inline-block animate-pulse rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-            <p className="${playfairDisplay.className} text-lg font-medium text-foreground dark:text-[#e2e8f0] mb-2">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-primary/20 border-t-primary mb-4"></div>
+            <p className="font-display text-lg font-medium text-foreground mb-2">
               Loading escalations...
             </p>
-            <p className="${inter.className} text-sm text-muted-foreground dark:text-muted">
+            <p className="font-body text-sm text-muted-foreground">
               Fetching conversations requiring your attention
             </p>
           </div>
@@ -105,8 +101,8 @@ export default function EscalationsPage() {
     return (
       <div className="min-h-[calc(100vh-64px)] py-8">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="p-6 bg-red-50 border border-red-200 text-red-500 rounded-md dark:bg-red-50 dark:text-red-400 dark:border-red-300">
-            <p className="${inter.className} font-medium">
+          <div className="p-6 bg-destructive/5 border border-destructive/25 text-destructive rounded-xl">
+            <p className="font-body font-medium">
               Error loading escalations: {error instanceof Error ? error.message : String(error)}
             </p>
             <div className="mt-4 flex justify-center">
@@ -121,16 +117,16 @@ export default function EscalationsPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-background dark:bg-[#0a0a0a]">
+    <div className="min-h-[calc(100vh-64px)] bg-background">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-border dark:border-[#334155]">
+      <div className="bg-card shadow-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <h1 className="${playfairDisplay.className} text-2xl font-bold text-foreground dark:text-[#e2e8f0]">
+              <h1 className="font-display text-2xl font-bold text-foreground">
                 Escalations Management
               </h1>
-              <p className="${inter.className} mt-1 text-sm text-muted-foreground dark:text-muted">
+              <p className="font-body mt-1 text-sm text-muted-foreground">
                 {filteredEscalations.length} conversations requiring attention
               </p>
             </div>
@@ -174,7 +170,7 @@ export default function EscalationsPage() {
                 className="hover:bg-accent/5"
               >
                 <ArrowPathIcon className="h-4 w-4 mr-2" />
-                <span className="${inter.className}">Refresh</span>
+                <span className="font-body">Refresh</span>
               </Button>
             </div>
           </div>
@@ -185,65 +181,65 @@ export default function EscalationsPage() {
       <div className="px-6 py-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-border dark:border-[#334155]">
+            <div className="bg-card rounded-xl p-4 shadow-sm border border-border">
               <div className="flex items-center justify-between">
                 <div className="flex-1 space-y-1">
-                  <p className="${inter.className} text-sm font-medium text-muted-foreground dark:text-muted">
+                  <p className="font-body text-sm font-medium text-muted-foreground">
                     Total
                   </p>
-                  <p className="${playfairDisplay.className} text-lg font-bold text-foreground dark:text-[#e2e8f0]">
+                  <p className="font-display text-lg font-bold text-foreground">
                     {escalations.length}
                   </p>
                 </div>
-                <div className="w-8 h-8 bg-primary/10 dark:bg-primary/20 rounded flex items-center justify-center">
+                <div className="w-8 h-8 bg-primary/10 rounded flex items-center justify-center">
                   <ListBulletIcon className="h-4 w-4 text-primary" />
                 </div>
               </div>
             </div>
             
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-dark:border-[#334155]">
+            <div className="bg-card rounded-xl p-4 shadow-sm border border-">
               <div className="flex items-center justify-between">
                 <div className="flex-1 space-y-1">
-                  <p className="${inter.className} text-sm font-medium text-muted-foreground dark:text-muted">
+                  <p className="font-body text-sm font-medium text-muted-foreground">
                     Open
                   </p>
-                  <p className="${playfairDisplay.className} text-lg font-bold text-foreground dark:text-[#e2e8f0]">
+                  <p className="font-display text-lg font-bold text-foreground">
                     {filteredEscalations.filter(e => e.status === 'open').length}
                   </p>
                 </div>
-                <div className="w-8 h-8 bg-primary/10 dark:bg-primary/20 rounded flex items-center justify-center">
+                <div className="w-8 h-8 bg-primary/10 rounded flex items-center justify-center">
                   <ChatBubbleLeftRightIcon className="h-4 w-4 text-primary" />
                 </div>
               </div>
             </div>
             
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-border dark:border-[#334155]">
+            <div className="bg-card rounded-xl p-4 shadow-sm border border-border">
               <div className="flex items-center justify-between">
                 <div className="flex-1 space-y-1">
-                  <p className="${inter.className} text-sm font-medium text-muted-foreground dark:text-muted">
+                  <p className="font-body text-sm font-medium text-muted-foreground">
                     Acknowledged
                   </p>
-                  <p className="${playfairDisplay.className} text-lg font-bold text-foreground dark:text-[#e2e8f0]">
+                  <p className="font-display text-lg font-bold text-foreground">
                     {filteredEscalations.filter(e => e.status === 'acknowledged').length}
                   </p>
                 </div>
-                <div className="w-8 h-8 bg-primary/10 dark:bg-primary/20 rounded flex items-center justify-center">
+                <div className="w-8 h-8 bg-primary/10 rounded flex items-center justify-center">
                   <Cog6ToothIcon className="h-4 w-4 text-primary" />
                 </div>
               </div>
             </div>
             
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-border dark:border-[#334155]">
+            <div className="bg-card rounded-xl p-4 shadow-sm border border-border">
               <div className="flex items-center justify-between">
                 <div className="flex-1 space-y-1">
-                  <p className="${inter.className} text-sm font-medium text-muted-foreground dark:text-muted">
+                  <p className="font-body text-sm font-medium text-muted-foreground">
                     Resolved
                   </p>
-                  <p className="${playfairDisplay.className} text-lg font-bold text-foreground dark:text-[#e2e8f0]">
+                  <p className="font-display text-lg font-bold text-foreground">
                     {filteredEscalations.filter(e => e.status === 'resolved').length}
                   </p>
                 </div>
-                <div className="w-8 h-8 bg-primary/10 dark:bg-primary/20 rounded flex items-center justify-center">
+                <div className="w-8 h-8 bg-primary/10 rounded flex items-center justify-center">
                   <CheckIcon className="h-4 w-4 text-success" />
                 </div>
               </div>
@@ -292,10 +288,10 @@ export default function EscalationsPage() {
             <div className="space-y-4">
               {filteredEscalations.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="${inter.className} text-muted-foreground">
+                  <p className="font-body text-muted-foreground">
                     {statusFilter ? `No ${statusFilter} escalations` : "No escalations yet"}
                   </p>
-                  <p className="${inter.className} text-sm text-muted-foreground mt-2">
+                  <p className="font-body text-sm text-muted-foreground mt-2">
                     Escalations are created automatically by the AI agent when it encounters
                     situations requiring human intervention.
                   </p>
