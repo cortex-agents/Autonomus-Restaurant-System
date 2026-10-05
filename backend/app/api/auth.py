@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, Depends
+import time
+from collections import defaultdict, deque
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,10 +13,25 @@ router=APIRouter(prefix="/api/auth",tags=["auth"])
 class LoginIn(BaseModel): email: EmailStr; password: str
 class RefreshIn(BaseModel): refresh_token: str
 
+# Simple in-memory brute-force guard (single-process MVP): 10 failures / 15 min per email+IP.
+_FAILS: dict[str,deque]=defaultdict(deque)
+_MAX_FAILS=10; _WINDOW=15*60
+
+def _fail_key(email,request): return f"{email.lower()}|{request.client.host if request.client else '-'}"
+def _recent_fails(key):
+    q=_FAILS[key]; now=time.monotonic()
+    while q and now-q[0]>_WINDOW: q.popleft()
+    return q
+
 @router.post("/login")
-async def login(body: LoginIn):
+async def login(body: LoginIn, request: Request):
+    key=_fail_key(body.email,request)
+    if len(_recent_fails(key))>=_MAX_FAILS: raise HTTPException(status_code=429,detail="Too many failed attempts. Try again later.")
     account=next((a for a in load_accounts() if a.get("email"," ").lower()==body.email.lower()),None)
-    if not account or not verify_password(body.password,account["password_hash"]): raise HTTPException(status_code=401,detail="Invalid email or password")
+    if not account or not verify_password(body.password,account["password_hash"]):
+        _recent_fails(key).append(time.monotonic())
+        raise HTTPException(status_code=401,detail="Invalid email or password")
+    _FAILS.pop(key,None)
     rid=account["restaurant_id"]
     return {"access_token":create_access_token(rid,body.email),"refresh_token":create_refresh_token(rid,body.email),"token_type":"bearer"}
 

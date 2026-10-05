@@ -4,6 +4,7 @@ from decimal import Decimal
 from zoneinfo import ZoneInfo
 from app.agent.tools import AgentTools
 from app.agent import cart as cart_utils
+from app.agent.menu_format import format_menu, filter_groups
 
 ESCALATION_TRIGGERS = [
     ("refund", "refund/compensation request"), ("compensation", "refund/compensation request"),
@@ -71,6 +72,10 @@ class AgentService:
 
         return await self._handle_deterministic(text)
 
+    async def _menu_text(self, request_text: str = "") -> str:
+        groups = filter_groups(await self.tools.get_menu_grouped(), request_text)
+        return format_menu(self.restaurant.name, groups)
+
     async def _handle_with_agents_sdk(self, text: str) -> str | None:
         """Best-effort real Agents SDK integration. Returns None to trigger fallback on any issue."""
         from agents import Agent, Runner, function_tool
@@ -83,7 +88,12 @@ class AgentService:
             rows = await tools_ref.get_menu(query)
             if not rows:
                 return "No matching items."
-            return ", ".join(f"{r.name} (PKR {r.base_price}) id={r.id}" for r in rows[:10])
+            return ", ".join(f"{r.name} (PKR {r.base_price}) id={r.id}" for r in rows[:25])
+
+        @function_tool
+        async def show_menu(category: str = "") -> str:
+            """Return this restaurant's menu grouped by category. Pass a category name only if the customer asked for one."""
+            return await self._menu_text(category)
 
         @function_tool
         async def add_to_cart(item_name: str, quantity: int = 1, variant: str | None = None) -> str:
@@ -107,7 +117,7 @@ class AgentService:
         agent = Agent(
             name="OrderAgent",
             instructions=render_prompt(self.restaurant),
-            tools=[get_menu, add_to_cart, get_cart_total, set_delivery_info, finalize_order],
+            tools=[get_menu, show_menu, add_to_cart, get_cart_total, set_delivery_info, finalize_order],
         )
         result = await Runner.run(agent, text)
         return getattr(result, "final_output", None)
@@ -131,10 +141,7 @@ class AgentService:
             if match_added:
                 return match_added
             if "menu" in low:
-                rows = await self.tools.get_menu("")
-                if not rows:
-                    return "Abhi menu available nahi hai."
-                return "Available: " + ", ".join(f"{r.name} — PKR {r.base_price}" for r in rows[:10])
+                return await self._menu_text(low)
             if low in {"hi", "hello", "salam", "assalam o alaikum"}:
                 return "Salam! 👋 Kya order karna chahenge?"
             return "Ji, item ka naam aur quantity bata dein (e.g. '2 zinger burger')."

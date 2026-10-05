@@ -1,4 +1,4 @@
-import asyncio,json
+import asyncio,json,logging
 from collections import defaultdict
 from datetime import datetime, timezone, timedelta
 from redis.asyncio import Redis
@@ -8,7 +8,7 @@ from app.db.session import SessionLocal
 from app.db.models import Restaurant,Message,Conversation
 from app.db.queries import get_or_create_customer,get_active_conversation
 from app.agent.service import AgentService
-from app.channels.whatsapp.handler import WhatsAppHandler
+from app.channels import get_channel
 from app.workers.reclaim import reclaim_loop
 
 locks=defaultdict(asyncio.Lock)
@@ -82,13 +82,9 @@ async def process_message(payload):
                 conv.last_activity_at=datetime.now(timezone.utc)
                 await session.commit()
             try:
-                if get_settings().active_channel == "evolution":
-                    from app.channels.evolution.handler import EvolutionHandler
-                    await EvolutionHandler().send_message(r.phone_number_id or payload.get("phone_number_id"), payload["from"], reply)
-                else:
-                    await WhatsAppHandler().send_message(r.phone_number_id or payload.get("phone_number_id"), payload["from"], reply)
+                await get_channel().send_message(r.phone_number_id or payload.get("phone_number_id"), payload["from"], reply)
             except Exception:
-                pass
+                logging.getLogger(__name__).exception("Failed to send WhatsApp reply (restaurant=%s)", r.id)
 
 async def worker():
     redis=Redis.from_url(get_settings().redis_url,decode_responses=True)

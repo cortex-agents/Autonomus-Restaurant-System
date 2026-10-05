@@ -6,7 +6,7 @@ from sqlalchemy import select
 from app.deps import get_current_restaurant
 from app.db.session import get_db
 from app.db.models import Escalation, Conversation, Message, Customer
-from app.channels.whatsapp.handler import WhatsAppHandler
+from app.channels import get_channel
 
 router=APIRouter(prefix="/api/escalations",tags=["escalations"])
 class ReplyIn(BaseModel): content:str
@@ -29,7 +29,7 @@ async def reply(id:UUID,body:ReplyIn,restaurant=Depends(get_current_restaurant),
     c=(await session.execute(select(Conversation).where(Conversation.id==e.conversation_id,Conversation.restaurant_id==restaurant.id))).scalar_one()
     customer=(await session.execute(select(Customer).where(Customer.id==c.customer_id,Customer.restaurant_id==restaurant.id))).scalar_one()
     # The schema's whatsapp_number is the restaurant receiving number. The customer phone is the reply destination.
-    await WhatsAppHandler().send_message(restaurant.phone_number_id,customer.phone,body.content)
+    await get_channel().send_message(restaurant.phone_number_id,customer.phone,body.content)
     session.add(Message(conversation_id=c.id,direction="outbound",role="system",content=body.content)); await session.commit()
     e.status="acknowledged"; await session.commit()
     return {"ok":True}

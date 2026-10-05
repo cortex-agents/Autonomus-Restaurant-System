@@ -5,8 +5,8 @@ AgentService — restaurant_id is NEVER an argument the model/customer can set.
 """
 from decimal import Decimal
 from sqlalchemy import select
-from app.db.models import MenuItem, Order, Escalation
-from app.channels.whatsapp.handler import WhatsAppHandler
+from app.db.models import MenuItem, MenuCategory, Order, Escalation
+from app.channels import get_channel
 from app.agent import cart as cart_utils
 
 
@@ -25,6 +25,30 @@ class AgentTools:
         if query:
             stmt = stmt.where(MenuItem.name.ilike(f"%{query}%"))
         return (await self.session.execute(stmt)).scalars().all()
+
+    async def get_menu_grouped(self):
+        """This restaurant's available items grouped by category, in display order.
+
+        Both queries are filtered by self.restaurant.id (resolved from the WhatsApp
+        number), so another restaurant's categories or items can never appear.
+        """
+        rid = self.restaurant.id
+        cats = (await self.session.execute(
+            select(MenuCategory).where(MenuCategory.restaurant_id == rid)
+            .order_by(MenuCategory.display_order, MenuCategory.name)
+        )).scalars().all()
+        items = (await self.session.execute(
+            select(MenuItem).where(MenuItem.restaurant_id == rid, MenuItem.is_available.is_(True))
+            .order_by(MenuItem.name)
+        )).scalars().all()
+        by_cat = {c.id: [] for c in cats}
+        other = []
+        for it in items:
+            (by_cat[it.category_id] if it.category_id in by_cat else other).append(it)
+        groups = [(c.name, by_cat[c.id]) for c in cats]
+        if other:
+            groups.append(("Other", other))
+        return groups
 
     async def add_to_cart(self, item: MenuItem, quantity: int = 1, variant: str | None = None, addons: list | None = None) -> str:
         unit_price = item.base_price
@@ -92,7 +116,7 @@ class AgentTools:
         # 🆕 Immediate owner alert (Section 12)
         if self.restaurant.owner_whatsapp_number and self.restaurant.phone_number_id:
             try:
-                await WhatsAppHandler().send_message(
+                await get_channel().send_message(
                     self.restaurant.phone_number_id, self.restaurant.owner_whatsapp_number,
                     f"⚠️ Escalation ({reason}) — customer {self.customer.phone}",
                 )
