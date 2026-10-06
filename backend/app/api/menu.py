@@ -5,10 +5,18 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
-from app.db.models import Restaurant, MenuCategory, MenuItem
+from app.db.models import MenuCategory, MenuItem
 from app.deps import get_current_restaurant
 
 router=APIRouter(prefix="/api/menu",tags=["menu"])
+
+class CategoryIn(BaseModel):
+    name: str
+    display_order: int = 0
+
+class CategoryPatch(BaseModel):
+    name: str | None = None
+    display_order: int | None = None
 
 class ItemIn(BaseModel):
     name:str; description:str|None=None; base_price:Decimal=Field(ge=0); category_id:UUID|None=None; variants:list=[]; addons:list=[]
@@ -20,6 +28,8 @@ class ItemPatch(BaseModel):
     category_id:UUID|None=None; variants:list|None=None; addons:list|None=None
 
 class AvailabilityIn(BaseModel): is_available:bool
+
+def category_dict(c): return {"id": str(c.id), "name": c.name, "display_order": c.display_order}
 
 @router.get("")
 async def menu(restaurant=Depends(get_current_restaurant),session:AsyncSession=Depends(get_db)):
@@ -39,6 +49,36 @@ async def category_check(session,rid,cid):
     if cid is None:return
     c=(await session.execute(select(MenuCategory).where(MenuCategory.id==cid,MenuCategory.restaurant_id==rid))).scalar_one_or_none()
     if not c:raise HTTPException(status_code=400,detail="Category not found for this restaurant")
+
+@router.get("/categories")
+async def list_categories(restaurant=Depends(get_current_restaurant),session:AsyncSession=Depends(get_db)):
+    cats=(await session.execute(select(MenuCategory).where(MenuCategory.restaurant_id==restaurant.id).order_by(MenuCategory.display_order, MenuCategory.name))).scalars().all()
+    return {"items": [category_dict(c) for c in cats]}
+
+@router.post("/categories")
+async def create_category(body: CategoryIn, restaurant=Depends(get_current_restaurant), session: AsyncSession=Depends(get_db)):
+    c = MenuCategory(restaurant_id=restaurant.id, name=body.name.strip(), display_order=body.display_order)
+    session.add(c); await session.commit(); await session.refresh(c)
+    return category_dict(c)
+
+@router.patch("/categories/{id}")
+async def edit_category(id: UUID, body: CategoryPatch, restaurant=Depends(get_current_restaurant), session: AsyncSession=Depends(get_db)):
+    c=(await session.execute(select(MenuCategory).where(MenuCategory.id==id,MenuCategory.restaurant_id==restaurant.id))).scalar_one_or_none()
+    if not c: raise HTTPException(status_code=404, detail="Category not found")
+    updates=body.model_dump(exclude_unset=True)
+    for k,v in updates.items():
+        setattr(c, k, v.strip() if k == "name" and isinstance(v, str) else v)
+    await session.commit(); await session.refresh(c)
+    return category_dict(c)
+
+@router.delete("/categories/{id}")
+async def delete_category(id: UUID, restaurant=Depends(get_current_restaurant), session: AsyncSession=Depends(get_db)):
+    c=(await session.execute(select(MenuCategory).where(MenuCategory.id==id,MenuCategory.restaurant_id==restaurant.id))).scalar_one_or_none()
+    if not c: raise HTTPException(status_code=404, detail="Category not found")
+    has_items=(await session.execute(select(MenuItem.id).where(MenuItem.restaurant_id==restaurant.id,MenuItem.category_id==id).limit(1))).scalar_one_or_none()
+    if has_items: raise HTTPException(status_code=400, detail="Category has menu items; move or delete items first")
+    await session.delete(c); await session.commit()
+    return {"ok": True}
 
 @router.post("/items")
 async def create_item(body:ItemIn,restaurant=Depends(get_current_restaurant),session:AsyncSession=Depends(get_db)):

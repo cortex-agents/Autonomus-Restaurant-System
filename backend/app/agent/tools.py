@@ -4,11 +4,13 @@ Restaurant-scoped agent tools (Section 8). Every tool closes over a fixed
 AgentService — restaurant_id is NEVER an argument the model/customer can set.
 """
 from decimal import Decimal
+import logging
 from sqlalchemy import select
 from app.db.models import MenuItem, MenuCategory, Order, Escalation
 from app.channels import get_channel
 from app.agent import cart as cart_utils
 
+logger = logging.getLogger(__name__)
 
 class AgentTools:
     def __init__(self, session, restaurant, customer, conversation):
@@ -105,9 +107,35 @@ class AgentTools:
         self.customer.total_orders = (self.customer.total_orders or 0) + 1
         await self.session.flush()
         lines = ", ".join(f"{i['qty']}x {i['name']}" for i in cart["items"])
+        if self.restaurant.owner_whatsapp_number and self.restaurant.phone_number_id:
+            try:
+                await get_channel().send_message(
+                    self.restaurant.phone_number_id,
+                    self.restaurant.owner_whatsapp_number,
+                    f"New order from {self.customer.phone}: {lines} — total PKR {total}.",
+                )
+            except Exception:
+                logger.exception(
+                    "New-order owner notification failed (restaurant=%s, conversation=%s)",
+                    self.restaurant.id,
+                    self.conversation.id,
+                )
+                self.session.add(Escalation(
+                    restaurant_id=self.restaurant.id,
+                    conversation_id=self.conversation.id,
+                    reason=f"Failed to send new-order owner notification for conversation {self.conversation.id}",
+                ))
         return f"Order confirm! {lines} — total PKR {total}. ETA ~40 min."
 
     async def escalate_to_human(self, reason: str) -> str:
+        existing = (await self.session.execute(select(Escalation).where(
+            Escalation.restaurant_id == self.restaurant.id,
+            Escalation.conversation_id == self.conversation.id,
+            Escalation.status.in_(["open", "acknowledged"]),
+        ))).scalar_one_or_none()
+        if existing:
+            self.conversation.status = "escalated"
+            return "Aapki request human team ke paas hai. Woh jald aap se contact karenge."
         self.conversation.status = "escalated"
         self.conversation.escalated_reason = reason
         esc = Escalation(restaurant_id=self.restaurant.id, conversation_id=self.conversation.id, reason=reason)
@@ -121,7 +149,11 @@ class AgentTools:
                     f"⚠️ Escalation ({reason}) — customer {self.customer.phone}",
                 )
             except Exception:
-                pass
+                logger.exception(
+                    "Escalation owner notification failed (restaurant=%s, conversation=%s)",
+                    self.restaurant.id,
+                    self.conversation.id,
+                )
         return "Main aapki request human team ko forward kar raha hoon. Woh jald aap se contact karenge."
 
     async def get_customer_history(self):

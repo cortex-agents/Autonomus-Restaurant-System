@@ -5,7 +5,7 @@ from redis.asyncio import Redis
 from sqlalchemy import select
 from app.config import get_settings
 from app.db.session import SessionLocal
-from app.db.models import Restaurant,Message,Conversation
+from app.db.models import Restaurant,Message,Conversation,Escalation
 from app.db.queries import get_or_create_customer,get_active_conversation
 from app.agent.service import AgentService
 from app.channels import get_channel
@@ -47,6 +47,21 @@ async def _get_or_create_conversation_with_timeout(session,restaurant_id,custome
     session.add(new_conv); await session.flush()
     return new_conv, None
 
+async def _record_send_failure(session, restaurant_id, conversation_id, reason):
+    existing = (await session.execute(select(Escalation).where(
+        Escalation.restaurant_id == restaurant_id,
+        Escalation.conversation_id == conversation_id,
+        Escalation.status.in_(["open", "acknowledged"]),
+        Escalation.reason == reason,
+    ))).scalar_one_or_none()
+    if not existing:
+        session.add(Escalation(
+            restaurant_id=restaurant_id,
+            conversation_id=conversation_id,
+            reason=reason,
+        ))
+        await session.commit()
+
 async def process_message(payload):
     async with SessionLocal() as session:
         r=await _resolve_restaurant(session,payload)
@@ -55,6 +70,17 @@ async def process_message(payload):
         conv,resume_prompt=await _get_or_create_conversation_with_timeout(session,r.id,customer.id)
         lock=locks[conv.id]
         async with lock:
+            if conv.status == "escalated":
+                session.add(Message(
+                    conversation_id=conv.id,
+                    direction="inbound",
+                    role="customer",
+                    content=payload.get("content", ""),
+                    whatsapp_message_id=payload.get("whatsapp_message_id"),
+                ))
+                conv.last_activity_at=datetime.now(timezone.utc)
+                await session.commit()
+                return
             if resume_prompt:
                 reply=resume_prompt
                 await session.commit()
@@ -76,15 +102,23 @@ async def process_message(payload):
                 try:
                     reply=await asyncio.wait_for(AgentService(session,r,customer,conv).handle(payload["content"]),timeout=30)
                 except Exception as e:
-                    print(f"AgentService ERROR: {type(e).__name__}: {e}", flush=True)
+                    logging.getLogger(__name__).exception(
+                        "AgentService failed (restaurant=%s, conversation=%s)",
+                        r.id,
+                        conv.id,
+                    )
                     reply="Thori dair lag rahi hai, ek minute mein wapas aata hoon"
                 session.add(Message(conversation_id=conv.id,direction="outbound",role="agent",content=reply))
                 conv.last_activity_at=datetime.now(timezone.utc)
                 await session.commit()
             try:
+                if not reply:
+                    return
                 await get_channel().send_message(r.phone_number_id or payload.get("phone_number_id"), payload["from"], reply)
             except Exception:
-                logging.getLogger(__name__).exception("Failed to send WhatsApp reply (restaurant=%s)", r.id)
+                reason = f"Failed to send WhatsApp reply for conversation {conv.id}"
+                logging.getLogger(__name__).exception("Failed to send WhatsApp reply (restaurant=%s, conversation=%s)", r.id, conv.id)
+                await _record_send_failure(session, r.id, conv.id, reason)
 
 async def worker():
     redis=Redis.from_url(get_settings().redis_url,decode_responses=True)

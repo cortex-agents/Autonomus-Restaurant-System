@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { setAuthData } from "@/lib/auth";
+import { API_BASE_URL } from "@/lib/config";
 
 
 export default function LoginPage() {
@@ -22,7 +23,7 @@ export default function LoginPage() {
 
     try {
       // Call login API
-      const response = await fetch("http://localhost:8000/api/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

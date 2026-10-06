@@ -47,6 +47,12 @@ interface BackendOrder {
   subtotal: number;
   delivery_fee: number;
   total: number;
+  customer?: {
+    id: string;
+    name: string | null;
+    phone: string;
+  } | null;
+  conversation_id?: string | null;
 
   delivery_address: string;
   payment_method: string;
@@ -76,11 +82,8 @@ const normalizeOrder = (
   return {
     id: order.id,
 
-    // Current backend order response does not
-    // contain customer information directly.
-    // Keep safe fallback values for the UI.
-    customer_name: "Customer",
-    customer_phone: "",
+    customer_name: order.customer?.name || "Customer",
+    customer_phone: order.customer?.phone || "",
 
     items: (order.items || []).map(
       (item: any, index: number) => {

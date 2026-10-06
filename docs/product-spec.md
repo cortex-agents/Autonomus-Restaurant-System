@@ -505,13 +505,21 @@ All endpoints are prefixed `/api` and require `Authorization: Bearer <JWT>` exce
 | `PATCH /api/menu/items/{id}` | Edit item (price, variants, addons) | |
 | `PATCH /api/menu/items/{id}/availability` | Toggle "86" an item instantly | Section 12 requirement |
 | `DELETE /api/menu/items/{id}` | Remove item | |
+| `GET /api/menu/categories` | List menu categories | |
+| `POST /api/menu/categories` | Create a menu category | |
+| `PATCH /api/menu/categories/{id}` | Rename/reorder a menu category | |
+| `DELETE /api/menu/categories/{id}` | Remove an empty category | Reject if it still has items |
 | `GET /api/escalations` | List open/acknowledged/resolved escalations | |
 | `GET /api/escalations/{id}` | Escalation detail + full conversation context | Section 12 "reply box" needs this |
 | `POST /api/escalations/{id}/reply` | Human sends a reply back to the customer via WhatsApp | |
 | `PATCH /api/escalations/{id}/resolve` | Mark escalation resolved | |
 | `GET /api/settings` | Current restaurant settings | Hours, delivery radius/fee, min order |
 | `PATCH /api/settings` | Update restaurant settings | |
+| `POST /api/auth/change-password` | Owner changes password | Requires current password |
+| `GET /api/conversations` | List conversations for this restaurant | Filter by status, paginate |
 | `GET /api/conversations/{id}` | Read-only conversation transcript | Used by escalation detail view |
+| `GET /api/analytics/summary` | Dashboard summary metrics | Orders, revenue, escalations, top items |
+| `GET /api/whatsapp/status` | Current channel + number mapping status | Includes last inbound timestamp |
 | `GET/WS /api/orders/live` | Real-time new-order feed | WebSocket if backend supports it; otherwise frontend polls `GET /api/orders?status=pending` every few seconds (Section 4: "Real-time via WebSocket/polling") |
 
 Every response body must be scoped to the caller's `restaurant_id` — the backend must verify the JWT's `restaurant_id` on every one of these before touching the DB, exactly as Section 15.5 already requires. This is the single most important rule for whoever builds the API layer.

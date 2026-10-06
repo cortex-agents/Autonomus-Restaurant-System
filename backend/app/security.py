@@ -1,15 +1,27 @@
-import json, os
+import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from jose import jwt, JWTError
-from passlib.context import CryptContext
-from fastapi import HTTPException, status
+import bcrypt
+from fastapi import HTTPException
 from app.config import get_settings
 
-pwd_context=CryptContext(schemes=["bcrypt"], deprecated="auto")
+def _password_bytes(password: str) -> bytes:
+    value = password.encode("utf-8")
+    if len(value) > 72:
+        raise ValueError("Password must be no longer than 72 UTF-8 bytes")
+    return value
 
-def verify_password(password, hashed): return pwd_context.verify(password, hashed)
-def hash_password(password): return pwd_context.hash(password)
+
+def verify_password(password: str, hashed: str) -> bool:
+    try:
+        return bcrypt.checkpw(_password_bytes(password), hashed.encode("utf-8"))
+    except (ValueError, TypeError):
+        return False
+
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(_password_bytes(password), bcrypt.gensalt()).decode("utf-8")
 
 def load_accounts():
     p=Path(get_settings().owner_accounts_file)

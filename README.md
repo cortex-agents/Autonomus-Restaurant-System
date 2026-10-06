@@ -25,7 +25,26 @@ credentials are missing or still defaults.
 
 ## Owner login
 
-Use `backend/scripts/create_owner.py` after the database is seeded and use the restaurant UUID printed/queryable from PostgreSQL.
+Run `alembic upgrade head` from `backend/` first, then use `backend/scripts/create_owner.py --email ... --password ... --restaurant-id ...` to create or rotate a restaurant owner's credentials in the `owner_users` table.
+
+If the legacy `OWNER_ACCOUNTS_FILE` contains existing owners, migrate them once with:
+
+`backend/scripts/migrate_legacy_owners.py`
+
+After verifying database login, remove the legacy owner JSON file and unset `OWNER_ACCOUNTS_FILE`.
+
+For new tenants, use one command:
+
+`backend/scripts/onboard_restaurant.py --name ... --whatsapp-number ... --phone-number-id ... --owner-email ... --owner-password ... --categories "Burgers,Pizzas"`
+
+This creates the restaurant, owner login, and optional starter categories without code changes.
+
+## Operational behavior
+
+Order responses include the tenant-scoped customer and conversation identifiers. Human escalation pauses
+automated replies until the conversation is resolved, and repeated escalation requests reuse the existing
+open handoff. Order confirmations, owner new-order alerts, and dashboard status changes use the active
+WhatsApp channel. Failed outbound messages are logged and surfaced as tenant-scoped dashboard escalations.
 
 ## Tests
 

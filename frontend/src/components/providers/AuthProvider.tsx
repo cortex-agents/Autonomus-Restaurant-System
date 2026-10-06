@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { getAuthHeaders, isAuthenticated, refreshToken, logout } from "@/lib/auth";
+import { isAuthenticated, refreshToken, logout, setAuthData } from "@/lib/auth";
+import { API_BASE_URL } from "@/lib/config";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -42,7 +43,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -57,17 +58,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const data = await response.json();
 
       // Store tokens
-      localStorage.setItem(
-        "auth_data",
-        JSON.stringify({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token,
-          expires_at:
-            Math.floor(Date.now() / 1000) + data.expires_in,
-          email: email, // Store email for user info
-          restaurant_id: data.restaurant_id || "1", // Store restaurant ID
-        })
-      );
+      const payload = JSON.parse(atob(data.access_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+      setAuthData({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_at: payload.exp,
+      });
 
       setIsAuthenticatedState(true);
     } catch (err) {

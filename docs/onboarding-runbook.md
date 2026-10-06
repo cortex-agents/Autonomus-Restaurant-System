@@ -1,11 +1,16 @@
 # Restaurant onboarding runbook
 
-1. Insert the restaurant row with its WhatsApp receiving number (`whatsapp_number`), Meta's `phone_number_id`, and the owner's personal WhatsApp number (`owner_whatsapp_number` — used for escalation alerts). No code changes are needed.
-2. Insert menu categories/items for that restaurant.
-3. Register the restaurant's number in Meta Business Manager to obtain its `phone_number_id`, and store it in the `restaurants.phone_number_id` column (this is what the webhook uses to route incoming messages — NOT the human-readable `whatsapp_number`).
-4. Provision one owner login with `python scripts/create_owner.py --email ... --password ... --restaurant-id ...`.
+1. Create a restaurant with owner credentials using:
+   `python scripts/onboard_restaurant.py --name ... --whatsapp-number ... --phone-number-id ... --owner-email ... --owner-password ... --categories "Burgers,Pizzas"`
+2. Ensure `restaurants.phone_number_id` is the routing key (Meta `phone_number_id` or Evolution instance name), not the human-readable `whatsapp_number`.
+3. Add/adjust menu items for that restaurant.
+4. If needed, rotate credentials with:
+   `python scripts/create_owner.py --email ... --password ... --restaurant-id ...`
 5. Verify the owner's JWT only returns that restaurant's data.
-6. Send a WhatsApp test message and verify: tenant resolution via `phone_number_id`, persisted messages, agent reply, order placement, and dashboard visibility.
+6. Send a WhatsApp test message and verify tenant resolution via `phone_number_id`, persisted messages, agent reply, order placement, and dashboard visibility.
+
+For an existing deployment that still uses `owner_accounts.json`, run
+`python scripts/migrate_legacy_owners.py` once after applying migrations. Verify database login for every owner, then remove the legacy file and unset `OWNER_ACCOUNTS_FILE`.
 
 ## Schema note (v1.1, current)
-`restaurants.phone_number_id` and `restaurants.owner_whatsapp_number` were added in migration `0002_gap_fixes`. Both are required for a restaurant to work correctly in production — `phone_number_id` for inbound message routing, `owner_whatsapp_number` for escalation alerts (Section 12).
+`restaurants.phone_number_id` and `restaurants.owner_whatsapp_number` were added in migration `0002_gap_fixes`. `owner_users` was added in migration `0003_owner_users`. Production routing and login both depend on these columns/tables.

@@ -6,10 +6,15 @@ All endpoints are prefixed `/api` and require `Authorization: Bearer <JWT>` exce
 |---|---|---|
 | POST /api/auth/login | Owner login (email + password) | Returns JWT scoped to restaurant_id |
 | POST /api/auth/refresh | Refresh an expiring JWT | |
+| POST /api/auth/change-password | Owner changes password | Requires current password |
 | GET /api/orders | List orders for the logged-in restaurant | Filter by status, paginate |
 | GET /api/orders/{id} | Single order detail | |
 | PATCH /api/orders/{id}/status | Update order status | pending → confirmed → preparing → out_for_delivery → delivered (or cancelled) |
 | GET /api/menu | Full menu (categories + items) | |
+| GET /api/menu/categories | List menu categories | |
+| POST /api/menu/categories | Create menu category | |
+| PATCH /api/menu/categories/{id} | Rename/reorder category | |
+| DELETE /api/menu/categories/{id} | Remove an empty category | |
 | POST /api/menu/items | Create a menu item | |
 | PATCH /api/menu/items/{id} | Edit item (price, variants, addons) | |
 | PATCH /api/menu/items/{id}/availability | Toggle availability ("86" an item) | |
@@ -20,7 +25,10 @@ All endpoints are prefixed `/api` and require `Authorization: Bearer <JWT>` exce
 | PATCH /api/escalations/{id}/resolve | Mark resolved | |
 | GET /api/settings | Current restaurant settings | Hours, delivery radius/fee, min order |
 | PATCH /api/settings | Update settings | |
+| GET /api/conversations | List conversations | Filter by status, paginate |
 | GET /api/conversations/{id} | Read-only conversation transcript | |
+| GET /api/analytics/summary | Dashboard summary | Orders, revenue, escalations, top items |
+| GET /api/whatsapp/status | Channel + tenant number mapping status | Includes last inbound timestamp |
 | GET /api/orders?status=pending (polling) | Live order feed for MVP | Poll every few seconds; upgrade to WebSocket later if needed |
 
 ## Rule

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from "react";
-import { useEscalations } from "@/hooks/useEscalations";
+import { useEscalations, useEscalationDetail } from "@/hooks/useEscalations";
 import { EscalationList } from "@/components/ui/EscalationList";
 import { EscalationDetail } from "@/components/ui/EscalationDetail";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ export default function EscalationsPage() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [selectedEscalationId, setSelectedEscalationId] = useState<string | null>(null);
   const [selectedEscalation, setSelectedEscalation] = useState<any | null>(null);
+  const detailQuery = useEscalationDetail(selectedEscalationId || "");
 
   // Handle status filter change
   const handleFilterChange = (status: string | null) => {
@@ -35,12 +36,8 @@ export default function EscalationsPage() {
   // Handle escalation selection
   const handleEscalationSelect = async (id: string) => {
     setSelectedEscalationId(id);
-    // In a real implementation, we'd fetch the detailed escalation here
-    // For now, we'll find it in the existing list (in a real app, use useEscalationDetail hook)
     const escalation = (escalations as any[]).find((e: any) => e.id === id);
-    if (escalation) {
-      setSelectedEscalation(escalation);
-    }
+    setSelectedEscalation(escalation || null);
   };
 
   // Handle reply submission
@@ -274,9 +271,9 @@ export default function EscalationsPage() {
                 </Button>
               </div>
 
-              {selectedEscalation && (
+              {(detailQuery.data || selectedEscalation) && (
                 <EscalationDetail
-                  escalation={selectedEscalation}
+                  escalation={detailQuery.data || selectedEscalation}
                   onReply={handleReply}
                   onResolve={handleResolve}
                   isReplying={isReplying}

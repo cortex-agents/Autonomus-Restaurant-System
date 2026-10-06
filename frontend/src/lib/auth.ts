@@ -2,7 +2,7 @@ const STORAGE_KEY = "auth_data";
 
 export interface AuthData {
   access_token: string;
-  refresh_token: string;
+  refresh_token?: string;
   expires_at: number; // Timestamp in seconds
 }
 
@@ -80,7 +80,8 @@ export const refreshToken = async (): Promise<boolean> => {
   try {
     const { refresh_token } = JSON.parse(authData);
 
-    const response = await fetch("/api/auth/refresh", {
+    if (!refresh_token) return false;
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -110,7 +111,7 @@ export const refreshToken = async (): Promise<boolean> => {
     const updatedAuthData = {
       ...JSON.parse(authData),
       access_token: data.access_token,
-      refresh_token: data.refresh_token,
+      refresh_token: data.refresh_token || refresh_token,
       expires_at: expiresAt,
     };
 
@@ -127,3 +128,4 @@ export const refreshToken = async (): Promise<boolean> => {
 export const logout = () => {
   localStorage.removeItem(STORAGE_KEY);
 };
+import { API_BASE_URL } from "./config";

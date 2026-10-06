@@ -21,7 +21,23 @@ async def detail(id:UUID,restaurant=Depends(get_current_restaurant),session=Depe
     e=(await session.execute(select(Escalation).where(Escalation.id==id,Escalation.restaurant_id==restaurant.id))).scalar_one_or_none()
     if not e:raise HTTPException(status_code=404,detail="Escalation not found")
     msgs=(await session.execute(select(Message).where(Message.conversation_id==e.conversation_id).order_by(Message.created_at))).scalars().all()
-    return {"id":str(e.id),"reason":e.reason,"status":e.status,"messages":[{"id":str(m.id),"direction":m.direction,"role":m.role,"content":m.content,"created_at":m.created_at} for m in msgs]}
+    return {
+        "id": str(e.id),
+        "reason": e.reason,
+        "status": e.status,
+        "created_at": e.created_at,
+        "resolved_at": e.resolved_at,
+        "messages": [
+            {
+                "id": str(m.id),
+                "direction": m.direction,
+                "role": m.role,
+                "content": m.content,
+                "created_at": m.created_at,
+            }
+            for m in msgs
+        ],
+    }
 @router.post("/{id}/reply")
 async def reply(id:UUID,body:ReplyIn,restaurant=Depends(get_current_restaurant),session=Depends(get_db)):
     e=(await session.execute(select(Escalation).where(Escalation.id==id,Escalation.restaurant_id==restaurant.id))).scalar_one_or_none()
