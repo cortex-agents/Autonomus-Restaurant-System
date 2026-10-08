@@ -27,26 +27,17 @@ export default function MenuPage() {
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null); // null means creating new item
   const [itemToEdit, setItemToEdit] = useState<any | null>(null); // data to initialize form with
+  const [formOpen, setFormOpen] = useState(false); // the form is shown for BOTH create (editingItemId=null) and edit
 
   // Handle creating a new item
   const handleCreate = async (itemData: any) => {
-    try {
-      await createMenuItem(itemData);
-    } catch (err) {
-      console.error("Failed to create item:", err);
-      // Error handling would be improved in a real implementation
-    }
+    await createMenuItem(itemData);
   };
 
   // Handle updating an item
   const handleUpdate = async (itemData: any) => {
     if (editingItemId) {
-      try {
-        await updateMenuItem({ id: editingItemId, item: itemData });
-      } catch (err) {
-        console.error("Failed to update item:", err);
-        // Error handling would be improved in a real implementation
-      }
+      await updateMenuItem({ id: editingItemId, item: itemData });
     }
   };
 
@@ -81,12 +72,14 @@ export default function MenuPage() {
       setEditingItemId(item.id);
       setItemToEdit(item);
     }
+    setFormOpen(true);
   };
 
   // Handle canceling edit
   const handleCancelEdit = () => {
     setEditingItemId(null);
     setItemToEdit(null);
+    setFormOpen(false);
   };
 
   if (isLoading) {
@@ -151,10 +144,7 @@ export default function MenuPage() {
             </div>
             <Button
               variant="default"
-              onClick={() => {
-                setEditingItemId(null);
-                setItemToEdit(null);
-              }}
+              onClick={() => handleStartEdit(null)}
               className="hover:bg-accent/5"
             >
               <ArrowPathIcon className="h-4 w-4 mr-2" />
@@ -223,7 +213,7 @@ export default function MenuPage() {
       <div className="px-6 pb-8">
         <div className="max-w-7xl mx-auto">
           {/* Edit/Create Form */}
-          {editingItemId !== null && (
+          {formOpen && (
             <div className="bg-card rounded-xl p-6 shadow-md mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-display text-xl font-bold text-foreground">
@@ -241,13 +231,14 @@ export default function MenuPage() {
 
               <MenuItemForm
                 item={itemToEdit}
-                onSave={editingItemId !== null ? handleUpdate : handleCreate}
+                key={editingItemId ?? itemToEdit?.id ?? "new"}
+                onSave={editingItemId ? handleUpdate : handleCreate}
                 onCancel={handleCancelEdit}
                 categories={allCategories.map((cat: any) => ({
                   id: cat.id,
                   name: cat.name
                 }))}
-                isSaving={editingItemId !== null ? isUpdating : isCreating}
+                isSaving={editingItemId ? isUpdating : isCreating}
               />
             </div>
           )}

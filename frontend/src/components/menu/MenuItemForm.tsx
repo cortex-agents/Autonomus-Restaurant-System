@@ -21,10 +21,11 @@ const MenuItemForm = ({
   categories,
   isSaving,
 }: MenuItemFormProps) => {
-  const isEditMode = !!item;
+  // A prefilled draft (id "new-…", from a category's "+ Add Item") is still a CREATE.
+  const isEditMode = !!item && !String(item.id).startsWith("new-");
   const [name, setName] = useState(item?.name ?? "");
   const [description, setDescription] = useState(item?.description ?? "");
-  const [basePrice, setBasePrice] = useState(item?.base_price ?? "");
+  const [basePrice, setBasePrice] = useState(item?.base_price !== undefined && item?.base_price !== null ? String(item.base_price) : "");
   const [categoryId, setCategoryId] = useState(item?.category_id ?? null);
   const [isAvailable, setIsAvailable] = useState(item?.is_available ?? true);
   const [variants, setVariants] = useState<Array<{ name: string; price_delta: string }>>(
@@ -43,7 +44,7 @@ const MenuItemForm = ({
       return;
     }
 
-    if (!basePrice.trim() || parseFloat(basePrice) < 0) {
+    if (!String(basePrice).trim() || isNaN(parseFloat(basePrice)) || parseFloat(basePrice) < 0) {
       alert("Please enter a valid price");
       return;
     }
@@ -78,10 +79,6 @@ const MenuItemForm = ({
 
   // Handle removing variant
   const removeVariant = (index: number) => {
-    if (variants.length <= 1) {
-      alert("At least one variant is required");
-      return;
-    }
     setVariants(variants.filter((_, i) => i !== index));
   };
 
@@ -92,10 +89,6 @@ const MenuItemForm = ({
 
   // Handle removing addon
   const removeAddon = (index: number) => {
-    if (addons.length <= 1) {
-      alert("At least one addon is required");
-      return;
-    }
     setAddons(addons.filter((_, i) => i !== index));
   };
 
