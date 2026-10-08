@@ -70,5 +70,6 @@ async def receive(request: Request):
             "whatsapp_message_id": key.get("id", ""),
             "content": text,
             "timestamp": str(data.get("messageTimestamp", "")),
+            "push_name": data.get("pushName") or "",
         })
     return {"ok": True}

@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "./config";
+
 const STORAGE_KEY = "auth_data";
 
 export interface AuthData {
@@ -53,11 +55,11 @@ export const getUserFromToken = (): { restaurantId: string; email: string } | nu
     const decodedPayload = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
     const parsedPayload = JSON.parse(decodedPayload);
 
-    // Extract restaurant_id and email from payload
-    // The field names might vary based on your backend implementation
-    // Common variations: restaurant_id, restaurantId, sub, etc.
-    const restaurantId = parsedPayload.restaurant_id || parsedPayload.restaurantId || parsedPayload.sub || "1";
-    const email = parsedPayload.email || parsedPayload.user_email || "owner@example.com";
+    // Backend JWT: `restaurant_id` = tenant, `sub` = owner email. No placeholder fallbacks:
+    // a token without both is treated as invalid so the user is sent back to /login.
+    const restaurantId = parsedPayload.restaurant_id;
+    const email = parsedPayload.email || parsedPayload.sub;
+    if (!restaurantId || !email) return null;
 
     return {
       restaurantId: String(restaurantId),
@@ -128,4 +130,3 @@ export const refreshToken = async (): Promise<boolean> => {
 export const logout = () => {
   localStorage.removeItem(STORAGE_KEY);
 };
-import { API_BASE_URL } from "./config";

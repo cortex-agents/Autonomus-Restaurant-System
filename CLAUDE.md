@@ -29,7 +29,7 @@ If a piece of code doesn't obviously satisfy this rule, stop and ask instead of 
 | Queue | Redis Streams | Behind a thin interface, swappable for Kafka later — do NOT introduce Kafka/Kubernetes now |
 | Frontend | TypeScript, Next.js (App Router), React | Owner dashboard only (built separately by another dev — do not touch unless asked) |
 | Auth | JWT | Scoped to restaurant_id, see Rule 1 |
-| Messaging | WhatsApp Business Cloud API (Meta) | REST/JSON over HTTPS |
+| Messaging | Evolution API (Baileys) now; WhatsApp Business Cloud API (Meta) after first paying client — switch via ACTIVE_CHANNEL | REST/JSON over HTTPS |
 | Containers | Docker + docker-compose | Single VPS target for MVP |
 | Tests | pytest | |
 
@@ -62,7 +62,13 @@ All endpoints are prefixed `/api` and require `Authorization: Bearer <JWT>` exce
 | PATCH /api/escalations/{id}/resolve | Mark resolved | |
 | GET /api/settings | Current restaurant settings | Hours, delivery radius/fee, min order |
 | PATCH /api/settings | Update settings | |
+| GET /api/conversations | List conversations (status filter, paginated) | |
 | GET /api/conversations/{id} | Read-only conversation transcript | |
+| GET /api/auth/me | Logged-in restaurant identity (name, WhatsApp number, owner email) | Shown in dashboard header |
+| POST /api/auth/change-password | Owner changes own password | 8–72 bytes |
+| GET /api/menu/categories (+ POST/PATCH/DELETE) | Category CRUD, scoped to restaurant | |
+| GET /api/analytics/summary?days=N | Orders/revenue (cancelled excluded), avg, top items | |
+| GET /api/whatsapp/status | Active channel, bot number, last inbound message | |
 | GET /api/orders?status=pending (polling) | Live order feed for MVP | Poll every few seconds; upgrade to WebSocket later if needed |
 
 **Rule:** You (backend) may not add, rename, or remove a field/endpoint here without updating this section FIRST. This is the only place backend and frontend need to agree — it's what lets both be built in parallel without blocking each other. Full field-level detail is in `docs/product-spec.md` Sections 7 and 7A.

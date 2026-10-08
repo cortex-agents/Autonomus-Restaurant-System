@@ -10,6 +10,9 @@ from app.db.queries import get_or_create_customer,get_active_conversation
 from app.agent.service import AgentService
 from app.channels import get_channel
 from app.workers.reclaim import reclaim_loop
+from app.phone import normalize_phone
+
+logger=logging.getLogger(__name__)
 
 locks=defaultdict(asyncio.Lock)
 STREAM="restaurant:inbound"; GROUP="restaurant-workers"; CONSUMER="worker-1"
@@ -20,7 +23,10 @@ async def _resolve_restaurant(session,payload):
     # Meta's phone_number_id (not the human-readable whatsapp_number) is the routing key.
     phone_number_id=payload.get("phone_number_id")
     if not phone_number_id: return None
-    return (await session.execute(select(Restaurant).where(Restaurant.phone_number_id==phone_number_id))).scalar_one_or_none()
+    r=(await session.execute(select(Restaurant).where(Restaurant.phone_number_id==phone_number_id))).scalar_one_or_none()
+    if r is None:
+        logger.warning("Inbound message for unknown instance/phone_number_id=%r dropped",phone_number_id)
+    return r
 
 async def _get_or_create_conversation_with_timeout(session,restaurant_id,customer_id):
     """30-min abandon / 24-hour discard rules per docs/product-spec.md Section 15.7."""
@@ -66,7 +72,19 @@ async def process_message(payload):
     async with SessionLocal() as session:
         r=await _resolve_restaurant(session,payload)
         if not r: return
-        customer=await get_or_create_customer(session,r.id,payload["from"])
+        if not r.is_active:
+            logger.info("Restaurant %s is deactivated; inbound message ignored",r.id)
+            return
+        wa_id=payload.get("whatsapp_message_id")
+        if wa_id:
+            dup=(await session.execute(select(Message.id).join(Conversation,Conversation.id==Message.conversation_id).where(Conversation.restaurant_id==r.id,Message.whatsapp_message_id==wa_id).limit(1))).first()
+            if dup:
+                logger.info("Duplicate whatsapp_message_id=%s ignored",wa_id)
+                return
+        sender=normalize_phone(payload["from"]) or payload["from"]
+        customer=await get_or_create_customer(session,r.id,sender)
+        if payload.get("push_name") and not customer.name:
+            customer.name=str(payload["push_name"])[:255]
         conv,resume_prompt=await _get_or_create_conversation_with_timeout(session,r.id,customer.id)
         lock=locks[conv.id]
         async with lock:
@@ -114,7 +132,7 @@ async def process_message(payload):
             try:
                 if not reply:
                     return
-                await get_channel().send_message(r.phone_number_id or payload.get("phone_number_id"), payload["from"], reply)
+                await get_channel().send_message(r.phone_number_id or payload.get("phone_number_id"), sender, reply)
             except Exception:
                 reason = f"Failed to send WhatsApp reply for conversation {conv.id}"
                 logging.getLogger(__name__).exception("Failed to send WhatsApp reply (restaurant=%s, conversation=%s)", r.id, conv.id)
@@ -135,6 +153,7 @@ async def worker():
                         await process_message(json.loads(data["payload"]))
                         await redis.xack(STREAM,GROUP,msg_id)
                     except Exception:
+                        logger.exception("Failed to process stream message %s (will be retried by reclaim loop)",msg_id)
                         continue
     finally:
         if reclaim_task: reclaim_task.cancel()

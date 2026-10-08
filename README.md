@@ -35,7 +35,7 @@ After verifying database login, remove the legacy owner JSON file and unset `OWN
 
 For new tenants, use one command:
 
-`backend/scripts/onboard_restaurant.py --name ... --whatsapp-number ... --phone-number-id ... --owner-email ... --owner-password ... --categories "Burgers,Pizzas"`
+`backend/scripts/onboard_restaurant.py --name ... --whatsapp-number ... --phone-number-id ... --owner-email ... --owner-whatsapp-number ... (password via OWNER_PASSWORD env var) ... --categories "Burgers,Pizzas"`
 
 This creates the restaurant, owner login, and optional starter categories without code changes.
 
@@ -49,3 +49,7 @@ WhatsApp channel. Failed outbound messages are logged and surfaced as tenant-sco
 ## Tests
 
 `cd backend && pytest`
+
+## Cleaning test data
+
+`python scripts/cleanup_test_data.py` lists test/demo restaurants (names/ids containing demo, test, isolation) that have no owner login. Add `--apply` to delete them and all their data; `--keep "<name>"` protects a restaurant.

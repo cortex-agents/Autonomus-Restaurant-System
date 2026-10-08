@@ -10,11 +10,15 @@ import {
   BookOpenIcon,
   ChatBubbleLeftRightIcon,
   Cog6ToothIcon,
+  UserCircleIcon,
+  ChatBubbleOvalLeftEllipsisIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { getUserFromToken, logout } from "@/lib/auth";
+import { useMe } from "@/hooks/useAccount";
+import { useEscalations } from "@/hooks/useEscalations";
 
 interface User {
   restaurantId: string;
@@ -26,7 +30,9 @@ const NAV = [
   { href: "/dashboard/orders", label: "Orders", icon: ListBulletIcon },
   { href: "/dashboard/menu", label: "Menu", icon: BookOpenIcon },
   { href: "/dashboard/escalations", label: "Escalations", icon: ChatBubbleLeftRightIcon },
+  { href: "/dashboard/conversations", label: "Conversations", icon: ChatBubbleOvalLeftEllipsisIcon },
   { href: "/dashboard/settings", label: "Settings", icon: Cog6ToothIcon },
+  { href: "/dashboard/account", label: "Account", icon: UserCircleIcon },
 ];
 
 function Brand() {
@@ -53,6 +59,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [user, setUser] = useState<User | null>(null);
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { data: me } = useMe();
+  const { escalations: openEsc } = useEscalations({ status: "open" });
+  const openCount = openEsc.length;
 
   useEffect(() => {
     const currentUser = getUserFromToken();
@@ -97,7 +106,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <item.icon className={`h-5 w-5 ${active ? "text-accent" : "text-white/50 group-hover:text-white/80"}`} />
               {item.label}
-              {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />}
+              {item.href === "/dashboard/escalations" && openCount > 0 ? (
+                <span className="ml-auto rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-black">{openCount}</span>
+              ) : (
+                active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" />
+              )}
             </Link>
           );
         })}
@@ -110,10 +123,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-white">
-              {mounted ? user?.email?.split("@")[0] || "User" : ""}
+              {mounted ? me?.name || user?.email?.split("@")[0] || "" : ""}
             </p>
             <p className="truncate text-xs text-white/50">
-              {mounted && user?.restaurantId ? `Restaurant #${user.restaurantId.slice(0, 8)}` : ""}
+              {mounted ? me?.whatsapp_number || user?.email || "" : ""}
             </p>
           </div>
           <button

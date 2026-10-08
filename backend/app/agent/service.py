@@ -12,6 +12,8 @@ ESCALATION_TRIGGERS = [
     ("allergy", "allergy/ingredient safety question"), ("angry", "abusive or aggressive language"),
 ]
 CONFIRM_WORDS = ["bas", "confirm", "done", "ho gaya", "bas itna", "yehi"]
+# Whole-word match so "basmati" / "abandoned" never trigger checkout.
+_CONFIRM_RE = re.compile(r"\b(?:" + "|".join(re.escape(w) for w in CONFIRM_WORDS) + r")\b")
 PAYMENT_CASH = ["cash", "cod"]
 PAYMENT_CARD = ["card"]
 QTY_ITEM_RE = re.compile(r"(\d+)\s*[xX]?\s*([a-zA-Z ]+)")
@@ -46,11 +48,11 @@ class AgentService:
         low = text.lower().strip()
 
         for needle, reason in ESCALATION_TRIGGERS:
-            if needle in low:
+            if re.search(r"\b" + re.escape(needle), low):
                 return await self.tools.escalate_to_human(reason)
 
         if not _is_open(self.restaurant):
-            return f"Hum abhi closed hain — timing {self.restaurant.opening_time} se {self.restaurant.closing_time} tak hai."
+            return f"Hum abhi closed hain — timing {self.restaurant.opening_time.strftime('%H:%M')} se {self.restaurant.closing_time.strftime('%H:%M')} tak hai."
                 # Critical checkout states must stay deterministic.
         # The LLM should not override persisted cart/address/payment state.
         if self.conversation.order_stage in (
@@ -80,6 +82,7 @@ class AgentService:
         """Best-effort real Agents SDK integration. Returns None to trigger fallback on any issue."""
         from agents import Agent, Runner, function_tool
         from app.agent.prompts import render_prompt
+        from app.config import get_settings
 
         tools_ref = self.tools
 
@@ -117,9 +120,23 @@ class AgentService:
         agent = Agent(
             name="OrderAgent",
             instructions=render_prompt(self.restaurant),
+            model=get_settings().openai_model or None,
             tools=[get_menu, show_menu, add_to_cart, get_cart_total, set_delivery_info, finalize_order],
         )
-        result = await Runner.run(agent, text)
+        from sqlalchemy import select
+        from app.db.models import Message
+        rows = (await self.session.execute(
+            select(Message).where(Message.conversation_id == self.conversation.id)
+            .order_by(Message.created_at.desc()).limit(12)
+        )).scalars().all()
+        history = [
+            {"role": "assistant" if m.direction == "outbound" else "user", "content": m.content}
+            for m in reversed(rows) if m.content
+        ]
+        # The current inbound message is already flushed in `rows`; only append if it is missing.
+        if not history or history[-1]["role"] != "user" or history[-1]["content"] != text:
+            history.append({"role": "user", "content": text})
+        result = await Runner.run(agent, history)
         return getattr(result, "final_output", None)
 
     async def _handle_deterministic(self, text: str) -> str:
@@ -132,7 +149,7 @@ class AgentService:
         if stage in ("browsing", "ordering"):
             match_added = await self._try_add_items(text)
             cart = cart_utils.cart_from_conversation(self.conversation)
-            if any(w in low for w in CONFIRM_WORDS) and cart.get("items"):
+            if _CONFIRM_RE.search(low) and cart.get("items"):
                 sub = cart_utils.subtotal(cart)
                 if sub < (self.restaurant.min_order_amount or Decimal("0")):
                     return f"Abhi total PKR {sub} hai, hamara minimum order PKR {self.restaurant.min_order_amount} hai — kuch aur add kar dein."

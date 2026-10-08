@@ -60,7 +60,7 @@ export default function SettingsPage() {
 
   // Extract restaurant name from settings or use placeholder
   // In a real app, this would come from the restaurant profile or JWT
-  const displayName = settings.brand_voice?.split(' ')[0] || "Your Restaurant";
+  const displayName = (settings as any).name || "Your Restaurant";
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-background">

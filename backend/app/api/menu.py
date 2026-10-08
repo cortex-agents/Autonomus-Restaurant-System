@@ -18,14 +18,26 @@ class CategoryPatch(BaseModel):
     name: str | None = None
     display_order: int | None = None
 
+class VariantIn(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    price_delta: Decimal = Field(default=Decimal(0))
+
+class AddonIn(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    price: Decimal = Field(default=Decimal(0), ge=0)
+
+def _plain(models):
+    # JSONB column: store plain numbers, not Decimal.
+    return [{k:(float(v) if isinstance(v,Decimal) else v) for k,v in m.model_dump().items()} for m in models]
+
 class ItemIn(BaseModel):
-    name:str; description:str|None=None; base_price:Decimal=Field(ge=0); category_id:UUID|None=None; variants:list=[]; addons:list=[]
+    name:str=Field(min_length=1,max_length=255); description:str|None=None; base_price:Decimal=Field(ge=0); category_id:UUID|None=None; variants:list[VariantIn]=[]; addons:list[AddonIn]=[]
 
 # 🆕 Separate PATCH schema — every field optional, so a partial update
 # (e.g. price only) never wipes out fields the caller didn't send.
 class ItemPatch(BaseModel):
     name:str|None=None; description:str|None=None; base_price:Decimal|None=Field(default=None,ge=0)
-    category_id:UUID|None=None; variants:list|None=None; addons:list|None=None
+    category_id:UUID|None=None; variants:list[VariantIn]|None=None; addons:list[AddonIn]|None=None
 
 class AvailabilityIn(BaseModel): is_available:bool
 
@@ -83,13 +95,16 @@ async def delete_category(id: UUID, restaurant=Depends(get_current_restaurant), 
 @router.post("/items")
 async def create_item(body:ItemIn,restaurant=Depends(get_current_restaurant),session:AsyncSession=Depends(get_db)):
     await category_check(session,restaurant.id,body.category_id)
-    i=MenuItem(restaurant_id=restaurant.id,**body.model_dump());session.add(i);await session.commit();await session.refresh(i);return item_dict(i)
+    data=body.model_dump(exclude={"variants","addons"})
+    i=MenuItem(restaurant_id=restaurant.id,**data,variants=_plain(body.variants),addons=_plain(body.addons));session.add(i);await session.commit();await session.refresh(i);return item_dict(i)
 
 @router.patch("/items/{id}")
 async def edit_item(id:UUID,body:ItemPatch,restaurant=Depends(get_current_restaurant),session:AsyncSession=Depends(get_db)):
     i=(await session.execute(select(MenuItem).where(MenuItem.id==id,MenuItem.restaurant_id==restaurant.id))).scalar_one_or_none()
     if not i:raise HTTPException(status_code=404,detail="Menu item not found")
-    updates=body.model_dump(exclude_unset=True)
+    updates=body.model_dump(exclude_unset=True,exclude={"variants","addons"})
+    if body.variants is not None: updates["variants"]=_plain(body.variants)
+    if body.addons is not None: updates["addons"]=_plain(body.addons)
     if "category_id" in updates:
         await category_check(session,restaurant.id,updates["category_id"])
     for k,v in updates.items():setattr(i,k,v)

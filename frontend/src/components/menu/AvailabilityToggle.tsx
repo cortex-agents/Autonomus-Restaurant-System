@@ -8,6 +8,8 @@ interface AvailabilityToggleProps {
   isAvailable: boolean;
   className?: string;
   disabled?: boolean;
+  /** When given (create/edit form), the toggle only edits local form state and never calls the API. */
+  onChange?: (value: boolean) => void;
 }
 
 const AvailabilityToggle = ({
@@ -15,6 +17,7 @@ const AvailabilityToggle = ({
   isAvailable,
   className,
   disabled = false,
+  onChange,
 }: AvailabilityToggleProps) => {
   const { mutate: toggleAvailability, isPending } = useMutation({
     mutationFn: () => toggleItemAvailability(itemId, !isAvailable),
@@ -31,7 +34,7 @@ const AvailabilityToggle = ({
       </span>
       <Toggle
         checked={isAvailable}
-        onCheckedChange={(checked) => toggleAvailability()}
+        onCheckedChange={(checked) => (onChange ? onChange(checked) : toggleAvailability())}
         disabled={disabled || isPending}
         className={className}
       />

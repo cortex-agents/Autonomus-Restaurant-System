@@ -16,6 +16,8 @@ def _money(value) -> str:
 def _variants_text(variants) -> str:
     parts = []
     for v in variants or []:
+        if not isinstance(v, dict):
+            continue
         name = v.get("name")
         if not name:
             continue

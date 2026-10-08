@@ -12,7 +12,9 @@ from app.deps import get_current_restaurant
 router=APIRouter(prefix="/api/auth",tags=["auth"])
 class LoginIn(BaseModel): email: EmailStr; password: str
 class RefreshIn(BaseModel): refresh_token: str
-class ChangePasswordIn(BaseModel): current_password: str; new_password: str = Field(min_length=8)
+class ChangePasswordIn(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8, max_length=72)
 
 # Simple in-memory brute-force guard (single-process MVP): 10 failures / 15 min per email+IP.
 _FAILS: dict[str,deque]=defaultdict(deque)
@@ -60,6 +62,11 @@ async def refresh(body: RefreshIn, session: AsyncSession = Depends(get_db)):
     # 🆕 Reject refresh if the restaurant was deactivated/deleted since the token was issued.
     r=(await session.execute(select(Restaurant).where(Restaurant.id==payload["restaurant_id"]))).scalar_one_or_none()
     if not r or not r.is_active: raise HTTPException(status_code=401,detail="Restaurant account no longer active")
+    email=(payload.get("sub") or "").strip().lower()
+    owner=await _owner_user_by_email(session,email)
+    # Owners in owner_users must still be active and still belong to the same restaurant.
+    if owner and (not owner.is_active or str(owner.restaurant_id)!=str(payload["restaurant_id"])):
+        raise HTTPException(status_code=401,detail="Owner account no longer active")
     return {"access_token":create_access_token(payload["restaurant_id"],payload["sub"]),"token_type":"bearer"}
 
 # 🆕 Dashboard's "who am I" endpoint — call right after login to get restaurant identity.
@@ -75,6 +82,7 @@ async def me(authorization: str | None = Header(default=None), restaurant=Depend
         "whatsapp_number":restaurant.whatsapp_number,
         "phone_number_id":restaurant.phone_number_id,
         "timezone":restaurant.timezone,
+        "owner_whatsapp_number":restaurant.owner_whatsapp_number,
         "owner_email":owner_email,
     }
 
@@ -100,6 +108,8 @@ async def change_password(
         raise HTTPException(status_code=404, detail="Owner account not found")
     if not verify_password(body.current_password, owner.password_hash):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
+    if len(body.new_password.encode()) > 72:
+        raise HTTPException(status_code=422, detail="Password too long (max 72 bytes)")
     owner.password_hash = hash_password(body.new_password)
     await session.commit()
     return {"ok": True}

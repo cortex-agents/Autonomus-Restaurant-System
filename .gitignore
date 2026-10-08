@@ -110,3 +110,7 @@ whatsapp_qr*.png
 # ================================
 docker-compose.override.yml
 ```
+
+# build artifacts
+tsconfig.tsbuildinfo
+*.tsbuildinfo

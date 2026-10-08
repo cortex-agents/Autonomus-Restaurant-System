@@ -11,6 +11,8 @@ interface OrderCardProps {
     id: string;
     customer_name: string;
     customer_phone: string;
+    delivery_address?: string;
+    payment_method?: string;
     items: {
       id: string;
       name: string;
@@ -82,6 +84,17 @@ export const OrderCard = ({ order, onStatusChange, className = "" }: OrderCardPr
             <span className="text-xs text-muted-foreground">{formatTime(order.created_at)}</span>
           </div>
         </div>
+
+        {(order.delivery_address || order.payment_method) && (
+          <dl className="mt-3 grid gap-1 text-sm text-muted-foreground">
+            {order.delivery_address && (
+              <div className="flex gap-2"><dt className="font-medium text-foreground/80">Address:</dt><dd className="min-w-0 break-words">{order.delivery_address}</dd></div>
+            )}
+            {order.payment_method && (
+              <div className="flex gap-2"><dt className="font-medium text-foreground/80">Payment:</dt><dd className="uppercase">{order.payment_method}</dd></div>
+            )}
+          </dl>
+        )}
 
         {/* Items */}
         {order.items.length > 0 && (

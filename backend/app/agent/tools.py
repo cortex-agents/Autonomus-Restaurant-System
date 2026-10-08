@@ -132,7 +132,8 @@ class AgentTools:
             Escalation.restaurant_id == self.restaurant.id,
             Escalation.conversation_id == self.conversation.id,
             Escalation.status.in_(["open", "acknowledged"]),
-        ))).scalar_one_or_none()
+            ~Escalation.reason.like("Failed to send%"),
+        ).limit(1))).scalars().first()
         if existing:
             self.conversation.status = "escalated"
             return "Aapki request human team ke paas hai. Woh jald aap se contact karenge."

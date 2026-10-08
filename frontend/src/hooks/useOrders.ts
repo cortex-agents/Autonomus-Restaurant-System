@@ -22,6 +22,8 @@ interface Order {
   id: string;
   customer_name: string;
   customer_phone: string;
+  delivery_address: string;
+  payment_method: string;
 
   items: OrderItem[];
 
@@ -84,6 +86,8 @@ const normalizeOrder = (
 
     customer_name: order.customer?.name || "Customer",
     customer_phone: order.customer?.phone || "",
+    delivery_address: order.delivery_address || "",
+    payment_method: order.payment_method || "",
 
     items: (order.items || []).map(
       (item: any, index: number) => {
@@ -252,6 +256,7 @@ export const useOrders = (
       fetchOrders(filters),
 
     staleTime: 1000 * 30,
+    refetchInterval: 20_000, // new WhatsApp orders appear without a manual refresh
   });
 
   const updateStatusMutation =

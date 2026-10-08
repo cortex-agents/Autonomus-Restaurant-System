@@ -4,6 +4,7 @@ import { useOrders } from "@/hooks/useOrders";
 import { useMenu } from "@/hooks/useMenu";
 import { useSettings } from "@/hooks/useSettings";
 import { useEscalations } from "@/hooks/useEscalations";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import Link from "next/link";
 import {
   ListBulletIcon,
@@ -67,6 +68,7 @@ function Skeleton() {
 }
 
 export default function DashboardPage() {
+  const { data: stats } = useAnalytics(7);
   const {
     orders,
     isLoading: ordersLoading,
@@ -88,8 +90,10 @@ export default function DashboardPage() {
   } = useEscalations({ status: undefined });
 
   // Calculate stats
-  const today = new Date().toISOString().split('T')[0];
-  const todayOrders = orders.filter(order => order.created_at.startsWith(today));
+  const todayStr = new Date().toDateString(); // local calendar day, not UTC
+  const todayOrders = orders.filter(
+    order => order.status !== 'cancelled' && new Date(order.created_at).toDateString() === todayStr
+  );
   const pendingOrders = orders.filter(
     order => order.status === 'pending' || order.status === 'confirmed'
   );
@@ -200,6 +204,23 @@ export default function DashboardPage() {
           href="/dashboard/escalations"
         />
       </section>
+
+      {stats && (
+        <section className="card-surface mt-6 p-5">
+          <h2 className="font-display text-lg font-semibold">Last 7 days</h2>
+          <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            <div><p className="text-xs text-muted-foreground">Orders (excl. cancelled)</p><p className="font-display text-2xl font-semibold">{stats.orders_count}</p></div>
+            <div><p className="text-xs text-muted-foreground">Revenue</p><p className="font-display text-2xl font-semibold">{formatCurrency(stats.revenue)}</p></div>
+            <div><p className="text-xs text-muted-foreground">Avg. order</p><p className="font-display text-2xl font-semibold">{formatCurrency(stats.avg_order_value)}</p></div>
+          </div>
+          {stats.top_items.length > 0 && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Top items: </span>
+              {stats.top_items.map((t) => `${t.name} (${t.qty})`).join(", ")}
+            </p>
+          )}
+        </section>
+      )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         {/* Recent orders */}

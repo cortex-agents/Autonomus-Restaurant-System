@@ -50,6 +50,7 @@ export const useEscalations = (filters?: { status?: string }) => {
     queryKey: ['escalations', filters],
     queryFn: () => fetchEscalations(filters),
     staleTime: 1000 * 30, // 30 seconds for relatively fresh data
+    refetchInterval: 20_000, // customers waiting for a human must not be missed
     // garbageCollectionTime: 1000 * 60 * 5, // 5 minutes - removed due to type error
   });
 

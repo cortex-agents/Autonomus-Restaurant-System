@@ -164,6 +164,7 @@ const MenuItemForm = ({
           <AvailabilityToggle
             itemId={item?.id ?? "new-item"}
             isAvailable={isAvailable}
+            onChange={setIsAvailable}
             disabled={isSaving}
           />
         </div>

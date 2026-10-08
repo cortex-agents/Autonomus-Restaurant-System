@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { isAuthenticated, refreshToken, logout, setAuthData } from "@/lib/auth";
 import { API_BASE_URL } from "@/lib/config";
+import { clearQueryCache } from "@/components/providers/QueryClientProvider";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -57,6 +58,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       const data = await response.json();
 
+      clearQueryCache(); // new session -> no data from a previous restaurant
       // Store tokens
       const payload = JSON.parse(atob(data.access_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
       setAuthData({
@@ -75,6 +77,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const logoutHandler = () => {
     logout();
+    clearQueryCache();
     setIsAuthenticatedState(false);
   };
 

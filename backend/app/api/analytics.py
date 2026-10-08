@@ -20,10 +20,10 @@ async def summary(
     since = now - timedelta(days=days)
 
     orders_count = (await session.execute(
-        select(func.count()).select_from(Order).where(Order.restaurant_id == restaurant.id, Order.created_at >= since)
+        select(func.count()).select_from(Order).where(Order.restaurant_id == restaurant.id, Order.created_at >= since, Order.status != "cancelled")
     )).scalar_one()
     revenue = (await session.execute(
-        select(func.coalesce(func.sum(Order.total), 0)).where(Order.restaurant_id == restaurant.id, Order.created_at >= since)
+        select(func.coalesce(func.sum(Order.total), 0)).where(Order.restaurant_id == restaurant.id, Order.created_at >= since, Order.status != "cancelled")
     )).scalar_one()
     pending_orders = (await session.execute(
         select(func.count()).select_from(Order).where(Order.restaurant_id == restaurant.id, Order.status == "pending")
@@ -37,7 +37,7 @@ async def summary(
     )).scalar_one()
 
     recent_orders = (await session.execute(
-        select(Order.items).where(Order.restaurant_id == restaurant.id, Order.created_at >= since).limit(1000)
+        select(Order.items).where(Order.restaurant_id == restaurant.id, Order.created_at >= since, Order.status != "cancelled")
     )).scalars().all()
     item_counts: Counter[str] = Counter()
     for payload in recent_orders:

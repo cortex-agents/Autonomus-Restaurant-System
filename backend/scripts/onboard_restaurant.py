@@ -1,4 +1,5 @@
 import argparse
+import os
 import asyncio
 from datetime import time
 from decimal import Decimal
@@ -6,6 +7,7 @@ from sqlalchemy import select
 from app.db.models import Restaurant, MenuCategory, OwnerUser
 from app.db.session import SessionLocal
 from app.security import hash_password
+from app.phone import normalize_phone
 
 
 def parse_time(raw: str) -> time:
@@ -16,11 +18,17 @@ def parse_time(raw: str) -> time:
 
 
 async def onboard(args):
-    if len(args.owner_password) < 8:
-        raise SystemExit("Owner password must be at least 8 characters")
+    if len(args.owner_password) < 8 or len(args.owner_password.encode()) > 72:
+        raise SystemExit("Owner password must be 8-72 bytes")
+    own_number = normalize_phone(args.whatsapp_number)
+    owner_number = normalize_phone(args.owner_whatsapp_number)
+    if not owner_number:
+        raise SystemExit("--owner-whatsapp-number is required (the owner's PERSONAL number that receives order alerts)")
+    if owner_number == own_number:
+        raise SystemExit("owner WhatsApp number must differ from the restaurant's bot number")
     async with SessionLocal() as session:
         existing_phone = (await session.execute(
-            select(Restaurant).where(Restaurant.whatsapp_number == args.whatsapp_number)
+            select(Restaurant).where(Restaurant.whatsapp_number == own_number)
         )).scalar_one_or_none()
         if existing_phone:
             raise SystemExit(f"Restaurant with whatsapp_number {args.whatsapp_number} already exists")
@@ -39,9 +47,9 @@ async def onboard(args):
 
         restaurant = Restaurant(
             name=args.name.strip(),
-            whatsapp_number=args.whatsapp_number.strip(),
+            whatsapp_number=own_number,
             phone_number_id=args.phone_number_id.strip(),
-            owner_whatsapp_number=(args.owner_whatsapp_number or args.whatsapp_number).strip(),
+            owner_whatsapp_number=owner_number,
             timezone=args.timezone,
             delivery_radius_km=Decimal(args.delivery_radius_km),
             delivery_fee=Decimal(args.delivery_fee),
@@ -77,8 +85,8 @@ def main():
     p.add_argument("--whatsapp-number", required=True)
     p.add_argument("--phone-number-id", required=True, help="Meta phone_number_id or Evolution instance name")
     p.add_argument("--owner-email", required=True)
-    p.add_argument("--owner-password", required=True)
-    p.add_argument("--owner-whatsapp-number")
+    p.add_argument("--owner-password", default=os.environ.get("OWNER_PASSWORD"), help="or set OWNER_PASSWORD env var (keeps it out of shell history)")
+    p.add_argument("--owner-whatsapp-number", required=True)
     p.add_argument("--timezone", default="Asia/Karachi")
     p.add_argument("--delivery-radius-km", default="0")
     p.add_argument("--delivery-fee", default="0")
@@ -88,6 +96,8 @@ def main():
     p.add_argument("--brand-voice", default="friendly, concise, Roman Urdu/English mix")
     p.add_argument("--categories", default="", help="Comma-separated categories, e.g. Burgers,Pizzas,BBQ")
     args = p.parse_args()
+    if not args.owner_password:
+        p.error("--owner-password or OWNER_PASSWORD env var is required")
     asyncio.run(onboard(args))
 
 

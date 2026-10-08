@@ -36,6 +36,11 @@ function getQueryClient() {
   return queryClient;
 }
 
+/** Drop every cached query (call on login/logout so one restaurant's data never reaches the next login). */
+export function clearQueryCache() {
+  queryClient?.clear();
+}
+
 interface QueryClientProviderProps {
   children: React.ReactNode;
 }
