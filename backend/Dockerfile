@@ -13,7 +13,7 @@ COPY alembic.ini ./
 COPY scripts ./scripts
 COPY tests ./tests
 
-RUN chmod +x scripts/wait_for_db.sh
+RUN sed -i "s/\r$//" scripts/wait_for_db.sh && chmod +x scripts/wait_for_db.sh
 
 CMD ["./scripts/wait_for_db.sh"]
 
