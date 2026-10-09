@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import datetime, timezone as dt_timezone
 from decimal import Decimal
@@ -70,7 +71,8 @@ class AgentService:
                 if result:
                     return result
         except Exception:
-            pass  # fall through to deterministic engine below
+            # Never crash the chat, but DO leave a trace (bad key, quota, network...).
+            logging.getLogger(__name__).exception("LLM path failed; using deterministic fallback")
 
         return await self._handle_deterministic(text)
 
