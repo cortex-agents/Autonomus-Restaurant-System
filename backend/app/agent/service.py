@@ -1,11 +1,20 @@
+import asyncio
 import logging
 import re
+import time
 from datetime import datetime, timezone as dt_timezone
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 from app.agent.tools import AgentTools
 from app.agent import cart as cart_utils
 from app.agent.menu_format import format_menu, filter_groups
+from app.agent import nlu
+
+logger = logging.getLogger(__name__)
+# When the LLM is unusable (no credits / bad key / outage) skip it for a while instead of making
+# every customer wait for a failing API call before the deterministic engine answers.
+_LLM_DISABLED_UNTIL = 0.0
+LLM_TIMEOUT_SECONDS = 15
 
 ESCALATION_TRIGGERS = [
     ("refund", "refund/compensation request"), ("compensation", "refund/compensation request"),
@@ -63,16 +72,21 @@ class AgentService:
         ):
             return await self._handle_deterministic(text)
 
-        # Try the real LLM-driven path first (only if a key is configured).
+        # Try the real LLM-driven path first (only if a key is configured and it is not in cooldown).
+        global _LLM_DISABLED_UNTIL
         try:
             from app.config import get_settings
-            if get_settings().openai_api_key:
-                result = await self._handle_with_agents_sdk(text)
+            if get_settings().openai_api_key and time.monotonic() >= _LLM_DISABLED_UNTIL:
+                result = await asyncio.wait_for(self._handle_with_agents_sdk(text), timeout=LLM_TIMEOUT_SECONDS)
                 if result:
                     return result
-        except Exception:
-            # Never crash the chat, but DO leave a trace (bad key, quota, network...).
-            logging.getLogger(__name__).exception("LLM path failed; using deterministic fallback")
+        except Exception as e:
+            status = getattr(e, "status_code", None)
+            quota_or_auth = status in (401, 403, 429) or "insufficient_quota" in str(e)
+            cooldown = 600 if quota_or_auth else 60
+            _LLM_DISABLED_UNTIL = time.monotonic() + cooldown
+            logger.warning("LLM path unavailable (%s: %s); using deterministic engine for %ss",
+                           type(e).__name__, str(e)[:160], cooldown)
 
         return await self._handle_deterministic(text)
 
@@ -149,21 +163,40 @@ class AgentService:
             stage = "browsing"; self.conversation.order_stage = "browsing"
 
         if stage in ("browsing", "ordering"):
-            match_added = await self._try_add_items(text)
+            groups = await self.tools.get_menu_grouped()
+            all_items = [it for _, items in groups for it in items]
             cart = cart_utils.cart_from_conversation(self.conversation)
+
+            # 1) precise item matches ("2 zinger burger", "zaiqa deal 1 chahiye")
+            added = await self._add_matches(text, all_items)
+            cart = cart_utils.cart_from_conversation(self.conversation)
+
             if _CONFIRM_RE.search(low) and cart.get("items"):
                 sub = cart_utils.subtotal(cart)
                 if sub < (self.restaurant.min_order_amount or Decimal("0")):
                     return f"Abhi total PKR {sub} hai, hamara minimum order PKR {self.restaurant.min_order_amount} hai — kuch aur add kar dein."
                 self.conversation.order_stage = "awaiting_address"
                 return "Theek hai! Delivery address bata dein?"
-            if match_added:
-                return match_added
-            if "menu" in low:
-                return await self._menu_text(low)
-            if low in {"hi", "hello", "salam", "assalam o alaikum"}:
-                return "Salam! 👋 Kya order karna chahenge?"
-            return "Ji, item ka naam aur quantity bata dein (e.g. '2 zinger burger')."
+            if added:
+                return added
+
+            # 2) menu / category requests ("menu", "sirf burgers dikhao")
+            hit = nlu.category_hit(groups, low)
+            if nlu.wants_menu(low) or hit:
+                return format_menu(self.restaurant.name, hit or groups)
+
+            # 3) loose single-word requests ("zinger")
+            cands = nlu.partial_candidates(text, all_items)
+            if len(cands) == 1:
+                return await self.tools.add_to_cart(cands[0], 1)
+            if len(cands) > 1:
+                opts = ", ".join(f"{r.name} (PKR {r.base_price})" for r in cands[:5])
+                return f"Kaunsa wala chahiye? {opts}"
+
+            if low in {"hi", "hello", "salam", "assalam o alaikum", "assalamualaikum", "aoa"}:
+                return "Salam! 👋 Kya order karna chahenge? 'menu' likhein."
+            sample = ", ".join(it.name.split("(")[0].strip() for it in all_items[:2]) or "zinger burger"
+            return f"Samajh nahi aaya. Item ka naam likhein (jaise '2 {sample.split(',')[0].lower()}') ya 'menu' likhein."
 
         if stage == "awaiting_address":
             cart = cart_utils.cart_from_conversation(self.conversation)
@@ -185,22 +218,17 @@ class AgentService:
 
         return "Ji, main order mein help karta hoon. Item ka naam bata dein."
 
-    async def _try_add_items(self, text: str) -> str | None:
-        """Very simple NLU: looks for '<qty> <item name>' patterns and matches against the menu."""
+    async def _add_matches(self, text: str, items: list) -> str | None:
+        """Add every precisely-matched menu item (default quantity 1); ask when ambiguous."""
+        matches, ambiguous = nlu.match_items(text, items)
         replies = []
-        for qty_str, name_guess in QTY_ITEM_RE.findall(text):
-            name_guess = name_guess.strip()
-            if len(name_guess) < 3:
-                continue
-            rows = await self.tools.get_menu(name_guess)
-            if not rows:
-                continue
-            if len(rows) > 1:
-                options = ", ".join(f"{r.name} (PKR {r.base_price})" for r in rows[:5])
-                replies.append(f"'{name_guess}' ke liye options: {options}. Konsa chahiye?")
-                continue
-            reply = await self.tools.add_to_cart(rows[0], int(qty_str) or 1)
-            replies.append(reply)
+        for item, qty in matches:
+            replies.append(await self.tools.add_to_cart(item, qty))
+        for group in ambiguous:
+            opts = ", ".join(f"{r.name} (PKR {r.base_price})" for r in group[:5])
+            replies.append(f"Kaunsa wala chahiye? {opts}")
+        if matches:
+            replies.append(await self.tools.get_cart_total())
         return " ".join(replies) if replies else None
 
     async def escalate(self, reason: str) -> str:
