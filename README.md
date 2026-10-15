@@ -23,7 +23,12 @@ restaurant that owns that number. Switching to the Meta Cloud API later is `ACTI
 With `ENVIRONMENT=production` the API refuses to start if the JWT secret, webhook secret or channel
 credentials are missing or still defaults.
 
-## Owner login
+
+## Backend starting commands
+- docker compose --env-file backend/.env up --build -d
+- 
+
+## Owner logincls
 
 Run `alembic upgrade head` from `backend/` first, then use `backend/scripts/create_owner.py --email ... --password ... --restaurant-id ...` to create or rotate a restaurant owner's credentials in the `owner_users` table.
 
@@ -53,3 +58,8 @@ WhatsApp channel. Failed outbound messages are logged and surfaced as tenant-sco
 ## Cleaning test data
 
 `python scripts/cleanup_test_data.py` lists test/demo restaurants (names/ids containing demo, test, isolation) that have no owner login. Add `--apply` to delete them and all their data; `--keep "<name>"` protects a restaurant.
+
+
+## BISTROBOT LOGIN CREDIENTIALS
+- Email: owner@zaiqa.com
+- Passward: Zaiqaowner@12345
